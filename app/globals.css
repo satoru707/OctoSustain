@@ -1,0 +1,181 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated to eco-friendly color scheme */
+  --background: #ffffff;
+  --foreground: #1f2937;
+  --card: #f0f4f1;
+  --card-foreground: #1f2937;
+  --popover: #ffffff;
+  --popover-foreground: #1f2937;
+  --primary: #3b826b;
+  --primary-foreground: #ffffff;
+  --secondary: #ffb74d;
+  --secondary-foreground: #1f2937;
+  --muted: #f0f4f1;
+  --muted-foreground: #6b7280;
+  --accent: #ff6f61;
+  --accent-foreground: #ffffff;
+  --destructive: #ea580c;
+  --destructive-foreground: #ffffff;
+  --border: #d1d5db;
+  --input: #ffffff;
+  --ring: rgba(59, 130, 105, 0.5);
+  --chart-1: #74c69d;
+  --chart-2: #ffb74d;
+  --chart-3: #ff6f61;
+  --chart-4: #4a4e69;
+  --chart-5: #9a8c98;
+  --radius: 0.5rem;
+  --sidebar: #f0f4f1;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: #3b826b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffb74d;
+  --sidebar-accent-foreground: #1f2937;
+  --sidebar-border: #d1d5db;
+  --sidebar-ring: rgba(59, 130, 105, 0.5);
+}
+
+.dark {
+  /* Updated dark mode colors to maintain eco theme */
+  --background: #0f1419;
+  --foreground: #f0f4f1;
+  --card: #1a2332;
+  --card-foreground: #f0f4f1;
+  --popover: #1a2332;
+  --popover-foreground: #f0f4f1;
+  --primary: #74c69d;
+  --primary-foreground: #0f1419;
+  --secondary: #2d4a3e;
+  --secondary-foreground: #f0f4f1;
+  --muted: #2d4a3e;
+  --muted-foreground: #9ca3af;
+  --accent: #ff8a80;
+  --accent-foreground: #0f1419;
+  --destructive: #dc2626;
+  --destructive-foreground: #f0f4f1;
+  --border: #374151;
+  --input: #1a2332;
+  --ring: rgba(116, 198, 157, 0.5);
+  --chart-1: #74c69d;
+  --chart-2: #ffb74d;
+  --chart-3: #ff8a80;
+  --chart-4: #6b7280;
+  --chart-5: #9ca3af;
+  --sidebar: #1a2332;
+  --sidebar-foreground: #f0f4f1;
+  --sidebar-primary: #74c69d;
+  --sidebar-primary-foreground: #0f1419;
+  --sidebar-accent: #2d4a3e;
+  --sidebar-accent-foreground: #f0f4f1;
+  --sidebar-border: #374151;
+  --sidebar-ring: rgba(116, 198, 157, 0.5);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Added eco-themed animations and patterns */
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes tentacle-wave {
+  0%,
+  100% {
+    transform: rotate(0deg) scaleY(1);
+  }
+  25% {
+    transform: rotate(2deg) scaleY(1.05);
+  }
+  75% {
+    transform: rotate(-2deg) scaleY(0.95);
+  }
+}
+
+.animate-wave {
+  animation: wave 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 2s ease-in-out infinite;
+}
+
+.animate-tentacle {
+  animation: tentacle-wave 4s ease-in-out infinite;
+}
+
+.eco-gradient {
+  background: linear-gradient(135deg, #f0f4f1 0%, #ffffff 100%);
+}
+
+.eco-gradient-dark {
+  background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+}
