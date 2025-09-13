@@ -1,6 +1,6 @@
-import { PodsGrid } from "@/components/pods/pods-grid"
-import { CreatePodButton } from "@/components/pods/create-pod-button"
-import { PageHeader } from "@/components/pods/page-header"
+import { PodsGrid } from "@/components/pods/pods-grid";
+import { CreatePodButton } from "@/components/pods/create-pod-button";
+import { PageHeader } from "@/components/pods/page-header";
 
 export default function PodsPage() {
   return (
@@ -11,7 +11,8 @@ export default function PodsPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Your Eco Pods</h1>
           <p className="text-muted-foreground mt-2">
-            Collaborate with teams to track and improve your environmental impact
+            Collaborate with teams to track and improve your environmental
+            impact
           </p>
         </div>
         <CreatePodButton />
@@ -19,5 +20,5 @@ export default function PodsPage() {
 
       <PodsGrid />
     </div>
-  )
+  );
 }

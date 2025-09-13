@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Sparkles } from "lucide-react"
-import Link from "next/link"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export function SignupTeaser() {
   return (
@@ -14,11 +14,14 @@ export function SignupTeaser() {
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
 
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Ready to Make an Impact?</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                Ready to Make an Impact?
+              </h2>
 
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-                Join thousands of eco-warriors already using OctoSustain to track their environmental impact and create
-                positive change. Start your sustainability journey today!
+                Join thousands of eco-warriors already using OctoSustain to
+                track their environmental impact and create positive change.
+                Start your sustainability journey today!
               </p>
             </div>
 
@@ -31,16 +34,6 @@ export function SignupTeaser() {
                   >
                     Start Your Eco Journey
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-
-                <Link href="/features">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="px-8 py-6 text-lg font-semibold rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 bg-transparent"
-                  >
-                    Learn More
                   </Button>
                 </Link>
               </div>
@@ -64,5 +57,5 @@ export function SignupTeaser() {
         </Card>
       </div>
     </section>
-  )
+  );
 }

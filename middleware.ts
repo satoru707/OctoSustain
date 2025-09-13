@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "@/lib/jwt";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
@@ -21,11 +21,9 @@ export function middleware(request: NextRequest) {
 
   if (isAuthRoute && token) {
     try {
-      jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+      verifyToken(token);
       return NextResponse.redirect(new URL("/pods", request.url));
     } catch {
-      console.log("Error verifying token, redirecting to signin");
-
       return NextResponse.redirect(new URL("/auth/signin", request.url));
     }
   }

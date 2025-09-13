@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { AnimatedOctopus } from "@/components/animated-octopus"
-import { ArrowRight, Play } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { Button } from "@/components/ui/button";
+import { AnimatedOctopus } from "@/components/animated-octopus";
+import { ArrowRight, Play } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export function HeroSection() {
-  const router = useRouter()
-  const [showDemo, setShowDemo] = useState(false)
+  const router = useRouter();
+  const [showDemo, setShowDemo] = useState(false);
 
   const handleGetStarted = () => {
-    router.push("/auth/signup")
-  }
+    router.push("/auth/signup");
+  };
 
   const handleWatchDemo = () => {
-    setShowDemo(true)
-  }
+    setShowDemo(true);
+  };
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -51,12 +51,15 @@ export function HeroSection() {
                 <span className="text-foreground"> with </span>
                 <span className="text-primary">OctoPods</span>
               </h1>
-              <h2 className="text-2xl sm:text-3xl font-semibold text-secondary">Multitask Like an Octopus! 🐙🌱</h2>
+              <h2 className="text-2xl sm:text-3xl font-semibold text-secondary">
+                Multitask Like an Octopus! 🐙🌱
+              </h2>
             </div>
 
             <p className="text-lg sm:text-xl text-muted-foreground text-pretty max-w-2xl">
-              Join teams to log energy, waste, transport in real-time—save the planet, earn ink points! Collaborate with
-              your pod to make a meaningful environmental impact.
+              Join teams to log energy, waste, transport in real-time—save the
+              planet, earn ink points! Collaborate with your pod to make a
+              meaningful environmental impact.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -83,16 +86,22 @@ export function HeroSection() {
             {/* Stats */}
             <div className="flex flex-wrap gap-8 justify-center lg:justify-start pt-8">
               <div className="text-center">
+                <div className="text-lg font-bold text-primary">
+                  Active Users Goal
+                </div>
                 <div className="text-2xl font-bold text-primary">10K+</div>
-                <div className="text-sm text-muted-foreground">Active Users</div>
               </div>
               <div className="text-center">
+                <div className="text-lg font-bold text-primary">
+                  CO2 Savings Goal
+                </div>
                 <div className="text-2xl font-bold text-primary">50K+</div>
-                <div className="text-sm text-muted-foreground">CO2 Saved (kg)</div>
               </div>
               <div className="text-center">
+                <div className="text-lg font-bold text-primary">
+                  Active Pods Goal
+                </div>
                 <div className="text-2xl font-bold text-primary">500+</div>
-                <div className="text-sm text-muted-foreground">Active Pods</div>
               </div>
             </div>
           </div>
@@ -112,11 +121,15 @@ export function HeroSection() {
               <Play className="w-16 h-16 text-primary" />
             </div>
             <p className="text-muted-foreground mb-4">
-              Watch how OctoSustain helps teams track their environmental impact in real-time with our intelligent
-              octopus-powered platform.
+              Watch how OctoSustain helps teams track their environmental impact
+              in real-time with our intelligent octopus-powered platform.
             </p>
             <div className="flex gap-3">
-              <Button onClick={() => setShowDemo(false)} variant="outline" className="flex-1">
+              <Button
+                onClick={() => setShowDemo(false)}
+                variant="outline"
+                className="flex-1"
+              >
                 Close
               </Button>
               <Button onClick={handleGetStarted} className="flex-1">
@@ -127,5 +140,5 @@ export function HeroSection() {
         </div>
       )}
     </section>
-  )
+  );
 }

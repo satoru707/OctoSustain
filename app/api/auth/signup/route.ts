@@ -1,13 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
+import { prisma } from "@/lib/prisma"
+import { signToken } from "@/lib/jwt"
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password, name } = await request.json()
 
-    // Check if user already exists (mock check)
-    const existingUser = [].find((u: any) => u.email === email)
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    })
+
     if (existingUser) {
       return NextResponse.json({ error: "User already exists" }, { status: 400 })
     }
@@ -15,17 +19,18 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user (mock creation)
-    const newUser = {
-      id: Date.now().toString(),
-      email,
-      password: hashedPassword,
-      name: name || email.split("@")[0],
-    }
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: name || email.split("@")[0],
+      },
+    })
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: newUser.id, email: newUser.email }, process.env.JWT_SECRET || "your-secret-key", {
-      expiresIn: "7d",
+    const token = signToken({
+      userId: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
     })
 
     // Set HTTP-only cookie

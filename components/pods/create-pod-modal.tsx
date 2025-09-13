@@ -1,71 +1,107 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Users } from "lucide-react"
-import { z } from "zod"
-import { useRouter } from "next/navigation"
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Users } from "lucide-react";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import api from "@/lib/api";
+import { toast } from "sonner";
 
 const createPodSchema = z.object({
   name: z.string().min(3, "Pod name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  category: z.string().min(1, "Please select a category"),
-})
+  // category: z.string().min(1, "Please select a category"),
+});
 
 interface CreatePodModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface PodProps {
+  data: {
+    pod: {
+      id: string;
+      name: string;
+      description: string;
+      memberCount: number;
+      members: Array<{ id: string; name: string; avatar: string }>;
+      inviteCode?: string;
+      isLive?: boolean;
+    };
+  };
+  status: number;
 }
 
 export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    category: "",
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+    // category: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrors({})
-    setIsLoading(true)
+    e.preventDefault();
+    console.log("Submitting form data:", formData);
+    console.log("1");
+
+    setIsLoading(true);
+    console.log("2");
 
     try {
-      const validatedData = createPodSchema.parse(formData)
+      console.log("3");
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const validatedData = createPodSchema.parse(formData);
+      console.log("4");
 
-      const newPodId = `pod-${Date.now()}`
+      console.log("validated data", validatedData);
+      const newPod: PodProps = await api.post("/pods", formData);
+      console.log("New pod created:", newPod);
 
       // Reset form and close modal
-      setFormData({ name: "", description: "", category: "" })
-      onClose()
-
-      router.push(`/dashboard/${newPodId}`)
+      setFormData({ name: "", description: "" });
+      onClose();
+      if (newPod.status == 201) {
+        router.push(`/pods/${newPod.data.pod.id}`);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors: Record<string, string> = {}
+        const fieldErrors: Record<string, string> = {};
         error.errors.forEach((err) => {
           if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message
+            fieldErrors[err.path[0] as string] = err.message;
           }
-        })
-        setErrors(fieldErrors)
+        });
+        setErrors(fieldErrors);
+      } else {
+        toast.error("Failed to create pod. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -77,7 +113,9 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
             </div>
             <div>
               <DialogTitle>Create New Pod</DialogTitle>
-              <DialogDescription>Start a new sustainability collaboration group</DialogDescription>
+              <DialogDescription>
+                Start a new sustainability collaboration group
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -89,21 +127,29 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
               id="name"
               placeholder="e.g., Green Office Warriors"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className={`${errors.name ? "border-red-500" : ""}`}
               disabled={isLoading}
             />
-            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-sm text-red-500">{errors.name}</p>
+            )}
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
             <Select
               value={formData.category}
-              onValueChange={(value) => setFormData({ ...formData, category: value })}
+              onValueChange={(value) =>
+                setFormData({ ...formData, category: value })
+              }
               disabled={isLoading}
             >
-              <SelectTrigger className={`${errors.category ? "border-red-500" : ""}`}>
+              <SelectTrigger
+                className={`${errors.category ? "border-red-500" : ""}`}
+              >
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
@@ -114,8 +160,10 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
                 <SelectItem value="personal">Personal</SelectItem>
               </SelectContent>
             </Select>
-            {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
-          </div>
+            {errors.category && (
+              <p className="text-sm text-red-500">{errors.category}</p>
+            )}
+          </div>*/}
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
@@ -123,11 +171,17 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
               id="description"
               placeholder="Describe your pod's sustainability goals and activities..."
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className={`min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className={`min-h-[100px] ${
+                errors.description ? "border-red-500" : ""
+              }`}
               disabled={isLoading}
             />
-            {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
+            {errors.description && (
+              <p className="text-sm text-red-500">{errors.description}</p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -158,5 +212,5 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

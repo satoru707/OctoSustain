@@ -1,71 +1,136 @@
-import { type NextRequest, NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
-
-// Mock pods data
-const mockPods = [
-  {
-    id: "1",
-    name: "Green Office Initiative",
-    description: "Reducing our workplace carbon footprint through collaborative eco-tracking",
-    memberCount: 12,
-    members: [
-      { id: "1", name: "Alice Johnson", avatar: "/diverse-woman-portrait.png" },
-      { id: "2", name: "Bob Smith", avatar: "/diverse-man-portrait.png" },
-      { id: "3", name: "Carol Davis", avatar: "/diverse-woman-portrait-2.png" },
-    ],
-    isLive: true,
-  },
-  {
-    id: "2",
-    name: "Sustainable Living Community",
-    description: "Neighbors working together to create a more sustainable neighborhood",
-    memberCount: 8,
-    members: [
-      { id: "4", name: "David Wilson", avatar: "/diverse-man-portrait-2.png" },
-      { id: "5", name: "Eva Martinez", avatar: "/diverse-woman-portrait-3.png" },
-    ],
-    isLive: false,
-  },
-]
+import { type NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/jwt";
+import { prisma } from "@/lib/prisma";
+import { demo, demoPods } from "@/demo/data";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("auth-token")?.value
+    const token = request.cookies.get("auth-token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET || "your-secret-key")
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+    let pods = [];
+    if (decoded.email === demo.email && decoded.password === demo.password) {
+      pods = demoPods;
+    } else {
+      const userPods = await prisma.pod.findMany({
+        where: {
+          members: {
+            some: {
+              userId: decoded.userId,
+            },
+          },
+        },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+            },
+          },
+        },
+      });
 
-    return NextResponse.json({ pods: mockPods })
+      // Transform data to match frontend expectations
+      pods = userPods.map((pod) => ({
+        id: pod.id,
+        name: pod.name,
+        description: pod.description,
+        memberCount: pod._count.members,
+        members: pod.members.map((member) => ({
+          id: member.user.id,
+          name: member.user.name,
+          avatar: member.user.avatar || "/diverse-woman-portrait.png",
+        })),
+        isLive: true, // Could be calculated based on recent activity
+        inviteCode: pod.inviteCode,
+      }));
+    }
+
+    return NextResponse.json({ pods }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("auth-token")?.value
+    const token = request.cookies.get("auth-token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any
-    const { name, description } = await request.json()
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
 
-    const newPod = {
-      id: Date.now().toString(),
-      name,
-      description,
+    const { name, description } = await request.json();
+
+    const newPod = await prisma.pod.create({
+      data: {
+        name,
+        description,
+        members: {
+          create: {
+            userId: decoded.userId,
+            role: "admin",
+            points: 0,
+          },
+        },
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Transform response to match frontend expectations
+    const pod = {
+      id: newPod.id,
+      name: newPod.name,
+      description: newPod.description,
       memberCount: 1,
-      members: [{ id: decoded.userId, name: "You", avatar: "/diverse-woman-portrait.png" }],
+      members: newPod.members.map((member) => ({
+        id: member.user.id,
+        name: member.user.name,
+        avatar: member.user.avatar || "/diverse-woman-portrait.png",
+      })),
       isLive: true,
-    }
+      inviteCode: newPod.inviteCode,
+    };
 
-    return NextResponse.json({ pod: newPod })
+    return NextResponse.json({ pod }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

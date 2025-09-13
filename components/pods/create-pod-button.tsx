@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { CreatePodModal } from "@/components/pods/create-pod-modal"
-import { Plus } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { CreatePodModal } from "@/components/pods/create-pod-modal";
+import { Plus } from "lucide-react";
 
 export function CreatePodButton() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <>
@@ -18,7 +18,10 @@ export function CreatePodButton() {
         Create Pod
       </Button>
 
-      <CreatePodModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CreatePodModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </>
-  )
+  );
 }

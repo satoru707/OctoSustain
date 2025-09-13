@@ -1,36 +1,36 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Loader2, Mail, Lock, Chrome } from "lucide-react"
-import { z } from "zod"
-import { SuccessConfetti } from "@/components/auth/success-confetti"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Loader2, Mail, Lock, Chrome } from "lucide-react";
+import { z } from "zod";
+import { SuccessConfetti } from "@/components/auth/success-confetti";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-})
+});
 
 export function SignInForm() {
-  const [formData, setFormData] = useState({ email: "", password: "" })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const router = useRouter()
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrors({})
-    setIsLoading(true)
+    e.preventDefault();
+    setErrors({});
+    setIsLoading(true);
 
     try {
-      const validatedData = signInSchema.parse(formData)
+      const validatedData = signInSchema.parse(formData);
 
       const response = await fetch("/api/auth/signin", {
         method: "POST",
@@ -38,48 +38,48 @@ export function SignInForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(validatedData),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        setErrors({ general: data.error || "Sign in failed" })
-        return
+        setErrors({ general: data.error || "Sign in failed" });
+        return;
       }
 
       // Show success animation
-      setShowSuccess(true)
+      setShowSuccess(true);
 
       // Redirect after animation
       setTimeout(() => {
-        router.push("/pods")
-      }, 2000)
+        router.push("/pods");
+      }, 2000);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors: Record<string, string> = {}
+        const fieldErrors: Record<string, string> = {};
         error.errors.forEach((err) => {
           if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message
+            fieldErrors[err.path[0] as string] = err.message;
           }
-        })
-        setErrors(fieldErrors)
+        });
+        setErrors(fieldErrors);
       } else {
-        setErrors({ general: "An unexpected error occurred" })
+        setErrors({ general: "An unexpected error occurred" });
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true)
-    console.log("Google OAuth integration needed")
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setShowSuccess(true)
+    setIsLoading(true);
+    console.log("Google OAuth integration needed");
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setShowSuccess(true);
     setTimeout(() => {
-      router.push("/pods")
-    }, 2000)
-  }
+      router.push("/pods");
+    }, 2000);
+  };
 
   return (
     <>
@@ -107,13 +107,19 @@ export function SignInForm() {
                 type="email"
                 placeholder="demo@octosustain.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 className={`rounded-lg border-2 transition-colors ${
-                  errors.email ? "border-red-500 focus:border-red-500" : "border-border focus:border-primary"
+                  errors.email
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-border focus:border-primary"
                 }`}
                 disabled={isLoading}
               />
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -123,13 +129,19 @@ export function SignInForm() {
                 type="password"
                 placeholder="password123"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
                 className={`rounded-lg border-2 transition-colors ${
-                  errors.password ? "border-red-500 focus:border-red-500" : "border-border focus:border-primary"
+                  errors.password
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-border focus:border-primary"
                 }`}
                 disabled={isLoading}
               />
-              {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password}</p>
+              )}
             </div>
 
             <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border">
@@ -159,7 +171,9 @@ export function SignInForm() {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
               </div>
             </div>
 
@@ -179,5 +193,5 @@ export function SignInForm() {
 
       {showSuccess && <SuccessConfetti />}
     </>
-  )
+  );
 }

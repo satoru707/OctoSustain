@@ -1,29 +1,29 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { OctopusLogo } from "@/components/octopus-logo"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Menu, X, LogOut } from "lucide-react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { OctopusLogo } from "@/components/octopus-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Menu, X, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const router = useRouter()
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("/api/auth/me")
-        setIsAuthenticated(response.ok)
+        const response = await fetch("/api/auth/me");
+        setIsAuthenticated(response.ok);
       } catch {
-        setIsAuthenticated(false)
+        setIsAuthenticated(false);
       }
-    }
-    checkAuth()
-  }, [])
+    };
+    checkAuth();
+  }, []);
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -31,28 +31,31 @@ export function Header() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/challenges", label: "Challenges" },
     { href: "/reports", label: "Reports" },
-  ]
+  ];
 
   const handleGetStarted = () => {
-    router.push("/auth/signup")
-  }
+    router.push("/auth/signup");
+  };
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" })
-      setIsAuthenticated(false)
-      router.push("/")
+      await fetch("/api/auth/logout", { method: "POST" });
+      setIsAuthenticated(false);
+      router.push("/");
     } catch (error) {
-      console.error("Logout failed:", error)
+      console.error("Logout failed:", error);
     }
-  }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+          <Link
+            href="/"
+            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+          >
             <OctopusLogo className="h-8 w-8 animate-wave" />
             <span className="text-xl font-bold text-primary">OctoSustain</span>
             <span className="text-lg">🐙🌱</span>
@@ -85,14 +88,28 @@ export function Header() {
                 Logout
               </Button>
             ) : (
-              <Button onClick={handleGetStarted} variant="default" size="sm" className="hidden sm:inline-flex">
+              <Button
+                onClick={handleGetStarted}
+                variant="default"
+                size="sm"
+                className="hidden sm:inline-flex"
+              >
                 Get Started
               </Button>
             )}
 
             {/* Mobile menu button */}
-            <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </div>
@@ -122,7 +139,12 @@ export function Header() {
                   Logout
                 </Button>
               ) : (
-                <Button onClick={handleGetStarted} variant="default" size="sm" className="mt-2 w-fit">
+                <Button
+                  onClick={handleGetStarted}
+                  variant="default"
+                  size="sm"
+                  className="mt-2 w-fit"
+                >
                   Get Started
                 </Button>
               )}
@@ -131,5 +153,5 @@ export function Header() {
         )}
       </div>
     </header>
-  )
+  );
 }
