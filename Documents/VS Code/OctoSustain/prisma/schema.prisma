@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  podMemberships PodMember[]
+  tentacleLogs   TentacleLog[]
+  challengeParticipations ChallengeParticipation[]
+  reports        Report[]
+  files          File[]
+  activities     Activity[]
+
+  @@map("users")
+}
+
+model Pod {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  inviteCode  String   @unique @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  members      PodMember[]
+  tentacleLogs TentacleLog[]
+  reports      Report[]
+  activities   Activity[]
+
+  @@map("pods")
+}
+
+model PodMember {
+  id     String @id @default(cuid())
+  userId String
+  podId  String
+  role   String @default("member") // member, admin
+  points Int    @default(0)
+  joinedAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pod  Pod  @relation(fields: [podId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, podId])
+  @@map("pod_members")
+}
+
+model TentacleLog {
+  id       String @id @default(cuid())
+  userId   String
+  podId    String
+  category String // energy, waste, transport, water, food, custom
+  value    Float
+  unit     String
+  notes    String?
+  imageUrl String?
+  co2Saved Float
+  points   Int
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pod  Pod  @relation(fields: [podId], references: [id], onDelete: Cascade)
+
+  @@map("tentacle_logs")
+}
+
+model Challenge {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  target      Float
+  unit        String
+  points      Int
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  participants ChallengeParticipation[]
+
+  @@map("challenges")
+}
+
+model ChallengeParticipation {
+  id          String @id @default(cuid())
+  userId      String
+  challengeId String
+  progress    Float  @default(0)
+  completed   Boolean @default(false)
+  joinedAt    DateTime @default(now())
+  completedAt DateTime?
+
+  // Relationships
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@map("challenge_participations")
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // weekly, monthly, quarterly, custom, challenge
+  period      String
+  startDate   DateTime
+  endDate     DateTime
+  data        Json
+  fileUrl     String?
+  format      String   @default("pdf") // pdf, csv, json
+  status      String   @default("completed") // generating, completed, failed
+  userId      String
+  podId       String
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pod  Pod  @relation(fields: [podId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model File {
+  id        String   @id @default(cuid())
+  filename  String
+  originalName String
+  mimeType  String
+  size      Int
+  url       String
+  userId    String
+  category  String? // tentacle_image, report_attachment, avatar
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("files")
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  podId     String
+  type      String   // tentacle_log, challenge_join, challenge_complete, report_generate
+  category  String?
+  details   Json
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pod  Pod  @relation(fields: [podId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+model Goal {
+  id        String   @id @default(cuid())
+  podId     String
+  category  String
+  target    Float
+  unit      String
+  period    String   // daily, weekly, monthly
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("goals")
+}
