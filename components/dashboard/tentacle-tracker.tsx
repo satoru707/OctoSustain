@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TentacleCard } from "@/components/dashboard/tentacle-card"
-import { Zap, Trash2, Car, Droplets, Leaf, BarChart3 } from "lucide-react"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TentacleCard } from "@/components/dashboard/tentacle-card";
+import { Zap, Trash2, Car, Droplets, Leaf, BarChart3 } from "lucide-react";
 
 const tentacleCategories = [
   {
@@ -60,16 +60,24 @@ const tentacleCategories = [
     unit: "units",
     description: "Create your own tracking categories",
   },
-]
+];
 
-export function TentacleTracker() {
-  const [activeTab, setActiveTab] = useState("energy")
+interface TentacleTrackerProps {
+  podId: string;
+}
+
+export function TentacleTracker({ podId }: TentacleTrackerProps) {
+  const [activeTab, setActiveTab] = useState("energy");
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Tentacle Tracker</h2>
-        <p className="text-muted-foreground">Monitor your environmental impact across multiple categories</p>
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          Tentacle Tracker
+        </h2>
+        <p className="text-muted-foreground">
+          Monitor your environmental impact across multiple categories
+        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -88,10 +96,10 @@ export function TentacleTracker() {
 
         {tentacleCategories.map((category) => (
           <TabsContent key={category.id} value={category.id} className="mt-6">
-            <TentacleCard category={category} />
+            <TentacleCard category={category} podId={podId} />
           </TabsContent>
         ))}
       </Tabs>
     </div>
-  )
+  );
 }

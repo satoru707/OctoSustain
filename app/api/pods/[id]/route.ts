@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { demo, demoPods, demoPodData } from "@/demo/data";
 
@@ -8,22 +8,20 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("Fetching pod with ID:", params.id);
+
     const token = request.cookies.get("auth-token")?.value;
-    console.log("Got token", token);
 
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    console.log("Token found", token);
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "your-secret-key"
-    ) as any;
+    const verified = verifyToken(token);
     const podId = params.id;
-    console.log("Decoded token", decoded);
     console.log("Pod ID", podId);
     var pod = [] as any;
-    if (decoded.email === demo.email && decoded.password === demo.password) {
+    if (verified.email === demo.email && verified.password === demo.password) {
       pod = demoPodData;
     } else {
       pod = await prisma.pod.findUnique({
@@ -58,7 +56,7 @@ export async function GET(
       const existingMembership = await prisma.podMember.findUnique({
         where: {
           userId_podId: {
-            userId: decoded.userId,
+            userId: verified.userId,
             podId: podId,
           },
         },

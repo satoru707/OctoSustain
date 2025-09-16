@@ -29,7 +29,7 @@ import { toast } from "sonner";
 const createPodSchema = z.object({
   name: z.string().min(3, "Pod name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  // category: z.string().min(1, "Please select a category"),
+  category: z.string().min(1, "Please select a category"),
 });
 
 interface CreatePodModalProps {
@@ -37,12 +37,13 @@ interface CreatePodModalProps {
   onClose: () => void;
 }
 
-interface PodProps {
+interface PodResponse {
   data: {
     pod: {
       id: string;
       name: string;
       description: string;
+      category: string;
       memberCount: number;
       members: Array<{ id: string; name: string; avatar: string }>;
       inviteCode?: string;
@@ -56,7 +57,7 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    // category: "",
+    category: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -64,27 +65,24 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting form data:", formData);
-    console.log("1");
-
     setIsLoading(true);
-    console.log("2");
+    setErrors({});
 
     try {
-      console.log("3");
-
       const validatedData = createPodSchema.parse(formData);
-      console.log("4");
 
-      console.log("validated data", validatedData);
-      const newPod: PodProps = await api.post("/pods", formData);
-      console.log("New pod created:", newPod);
+      const response: PodResponse = await api.post("/pods", validatedData);
 
-      // Reset form and close modal
-      setFormData({ name: "", description: "" });
-      onClose();
-      if (newPod.status == 201) {
-        router.push(`/pods/${newPod.data.pod.id}`);
+      if (response.status === 201) {
+        toast.success(`Pod "${response.data.pod.name}" created successfully!`);
+
+        // Reset form and close modal
+        setFormData({ name: "", description: "", category: "" });
+        onClose();
+
+        router.push(`/pods/${response.data.pod.id}`);
+      } else {
+        throw new Error("Failed to create pod");
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -96,6 +94,7 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
         });
         setErrors(fieldErrors);
       } else {
+        console.error("Pod creation error:", error);
         toast.error("Failed to create pod. Please try again.");
       }
     } finally {
@@ -138,7 +137,7 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
             )}
           </div>
 
-          {/* <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
             <Select
               value={formData.category}
@@ -163,7 +162,7 @@ export function CreatePodModal({ isOpen, onClose }: CreatePodModalProps) {
             {errors.category && (
               <p className="text-sm text-red-500">{errors.category}</p>
             )}
-          </div>*/}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>

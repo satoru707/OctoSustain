@@ -24,43 +24,21 @@ export { UserContext };
 
 const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const pathname = usePathname();
-  const router = useRouter();
 
   useEffect(() => {
-    console.log(pathname);
-
     fetchUser();
   }, []);
 
   async function fetchUser() {
     try {
       const response: CustomResponse = await api.get("/auth/me");
-      console.log("User fetch response:", response);
-
       if (response.status === 200) {
-        console.log("Authenticated user found");
         const data = response as CustomResponse;
         setUser(data.user);
-        console.log("At least");
-
-        if (
-          pathname === "/auth/signin" ||
-          pathname === "/signup" ||
-          pathname === "/"
-        ) {
-          console.log("Redirecting to /pods");
-
-          router.push("/pods");
-        }
-        console.log("WOmp");
       } else {
-        console.log("No authenticated user found");
-
         setUser(null);
       }
     } catch {
-      console.log("Error fetching user");
       setUser(null);
     }
   }

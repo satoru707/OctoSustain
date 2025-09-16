@@ -1,14 +1,17 @@
-import { type NextRequest, NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
+import { type NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/jwt";
 
-export async function GET(request: NextRequest, { params }: { params: { fileId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { fileId: string } }
+) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { fileId } = params
+    const { fileId } = params;
 
     // Mock file details - replace with database query
     const fileDetails = {
@@ -36,26 +39,32 @@ export async function GET(request: NextRequest, { params }: { params: { fileId: 
       tags: ["waste-sorting", "recycling", "challenge"],
       downloads: 5,
       views: 23,
-    }
+    };
 
-    return NextResponse.json(fileDetails)
+    return NextResponse.json(fileDetails);
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { fileId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { fileId: string } }
+) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    const { fileId } = params
+    const decoded = verifyToken(token) as any;
+    const { fileId } = params;
 
     // Mock file deletion - replace with real file deletion and database cleanup
-    console.log(`Deleting file ${fileId} by user ${decoded.userId}`)
+    console.log(`Deleting file ${fileId} by user ${decoded.userId}`);
 
     // In real implementation:
     // 1. Check if user has permission to delete
@@ -66,34 +75,43 @@ export async function DELETE(request: NextRequest, { params }: { params: { fileI
     return NextResponse.json({
       success: true,
       message: "File deleted successfully",
-    })
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { fileId: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { fileId: string } }
+) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    const { fileId } = params
-    const body = await request.json()
+    const decoded = verifyToken(token) as any;
+    const { fileId } = params;
+    const body = await request.json();
 
-    const { tags, category, description } = body
+    const { tags, category, description } = body;
 
     // Mock file update - replace with database update
-    console.log(`Updating file ${fileId} by user ${decoded.userId}:`, body)
+    console.log(`Updating file ${fileId} by user ${decoded.userId}:`, body);
 
     return NextResponse.json({
       success: true,
       message: "File updated successfully",
       updatedFields: { tags, category, description },
-    })
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

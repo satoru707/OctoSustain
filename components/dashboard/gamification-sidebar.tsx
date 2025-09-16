@@ -1,60 +1,189 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Trophy, Clock, Lightbulb, FileText, Crown, Medal, Award } from "lucide-react"
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Trophy,
+  Clock,
+  Lightbulb,
+  FileText,
+  Crown,
+  Medal,
+  Award,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-// Mock data
-const leaderboardData = [
-  { id: "1", name: "Alice Johnson", points: 2450, avatar: "/diverse-woman-portrait.png", rank: 1 },
-  { id: "2", name: "Bob Smith", points: 2380, avatar: "/thoughtful-man.png", rank: 2 },
-  { id: "3", name: "Carol Davis", points: 2290, avatar: "/diverse-woman-portrait.png", rank: 3 },
-  { id: "4", name: "David Wilson", points: 2150, avatar: "/thoughtful-man.png", rank: 4 },
-  { id: "5", name: "Emma Brown", points: 2050, avatar: "/diverse-woman-portrait.png", rank: 5 },
-]
+interface GamificationSidebarProps {
+  podId: string;
+}
 
-const activeChallenges = [
-  { id: "1", name: "No Plastic Week", timeLeft: 2 * 24 * 60 * 60 * 1000, progress: 75 },
-  { id: "2", name: "Energy Saver", timeLeft: 5 * 24 * 60 * 60 * 1000, progress: 45 },
-  { id: "3", name: "Green Commute", timeLeft: 1 * 24 * 60 * 60 * 1000, progress: 90 },
-]
+interface GamificationData {
+  userPoints: number;
+  leaderboard: Array<{
+    id: string;
+    name: string;
+    points: number;
+    rank: number;
+  }>;
+  activeChallenges: Array<{
+    id: string;
+    name: string;
+    timeLeft: number;
+    progress: number;
+    points: number;
+  }>;
+  predictiveTip: {
+    category: string;
+    message: string;
+    potentialSaving: string;
+  };
+}
 
-export function GamificationSidebar() {
-  const [currentTime, setCurrentTime] = useState(Date.now())
-  const userPoints = 2380 // Mock user points
+export function GamificationSidebar({ podId }: GamificationSidebarProps) {
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [gamificationData, setGamificationData] =
+    useState<GamificationData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchGamificationData = async () => {
+      try {
+        const response = await fetch(`/api/dashboard/${podId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setGamificationData(data.gamification);
+        }
+      } catch (error) {
+        console.error("Failed to fetch gamification data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGamificationData();
+  }, [podId]);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(Date.now())
-    }, 1000)
+      setCurrentTime(Date.now());
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [])
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleGenerateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      const response = await fetch("/api/reports/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          podId,
+          type: "weekly",
+          period: "weekly",
+          startDate: new Date(
+            Date.now() - 7 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          endDate: new Date().toISOString(),
+          includeCharts: true,
+          includeDetails: true,
+          format: "pdf",
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success("Report generated successfully!");
+        router.push(`/reports/${podId}`);
+      } else {
+        toast.error("Failed to generate report");
+      }
+    } catch (error) {
+      console.error("Report generation error:", error);
+      toast.error("Failed to generate report");
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   const formatTimeLeft = (timeLeft: number) => {
-    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (days > 0) return `${days}d ${hours}h`
-    if (hours > 0) return `${hours}h ${minutes}m`
-    return `${minutes}m`
-  }
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="h-4 w-4 text-yellow-500" />
+        return <Crown className="h-4 w-4 text-yellow-500" />;
       case 2:
-        return <Medal className="h-4 w-4 text-gray-400" />
+        return <Medal className="h-4 w-4 text-gray-400" />;
       case 3:
-        return <Award className="h-4 w-4 text-amber-600" />
+        return <Award className="h-4 w-4 text-amber-600" />;
       default:
-        return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>
+        return (
+          <span className="text-sm font-bold text-muted-foreground">
+            #{rank}
+          </span>
+        );
     }
+  };
+
+  const getEcoWarriorLevel = (points: number) => {
+    if (points >= 5000) return "Eco Champion";
+    if (points >= 2500) return "Eco Warrior";
+    if (points >= 1000) return "Eco Guardian";
+    if (points >= 500) return "Eco Explorer";
+    return "Eco Novice";
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="animate-pulse space-y-3">
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-8 bg-muted rounded"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!gamificationData) {
+    return (
+      <Card className="border-2 border-destructive/20 bg-destructive/5">
+        <CardContent className="p-4">
+          <p className="text-destructive text-sm">
+            Failed to load gamification data
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -65,12 +194,17 @@ export function GamificationSidebar() {
           <div className="mx-auto mb-2 p-3 bg-primary/20 rounded-full w-fit">
             <Trophy className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">{userPoints.toLocaleString()}</CardTitle>
+          <CardTitle className="text-2xl font-bold text-primary">
+            {gamificationData.userPoints.toLocaleString()}
+          </CardTitle>
           <CardDescription className="font-medium">Ink Points</CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
-            Eco Warrior Level
+          <Badge
+            variant="secondary"
+            className="bg-primary/20 text-primary border-primary/30"
+          >
+            {getEcoWarriorLevel(gamificationData.userPoints)}
           </Badge>
         </CardContent>
       </Card>
@@ -85,31 +219,43 @@ export function GamificationSidebar() {
           <CardDescription>Top performers this week</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {leaderboardData.map((member, index) => (
-            <div
-              key={member.id}
-              className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                member.points === userPoints ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"
-              }`}
-            >
-              <div className="flex items-center justify-center w-6">{getRankIcon(member.rank)}</div>
+          {gamificationData.leaderboard.length > 0 ? (
+            gamificationData.leaderboard.map((member) => (
+              <div
+                key={member.id}
+                className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                  member.points === gamificationData.userPoints
+                    ? "bg-primary/10 border border-primary/20"
+                    : "hover:bg-muted/50"
+                }`}
+              >
+                <div className="flex items-center justify-center w-6">
+                  {getRankIcon(member.rank)}
+                </div>
 
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                  {member.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src="/placeholder.svg" alt={member.name} />
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    {member.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{member.name}</p>
-                <p className="text-xs text-muted-foreground">{member.points.toLocaleString()} points</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{member.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {member.points.toLocaleString()} points
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No leaderboard data yet
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -123,34 +269,46 @@ export function GamificationSidebar() {
           <CardDescription>Join before time runs out!</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {activeChallenges.map((challenge) => {
-            const timeLeft = challenge.timeLeft - (currentTime % challenge.timeLeft)
-            const isUrgent = timeLeft < 24 * 60 * 60 * 1000 // Less than 24 hours
+          {gamificationData.activeChallenges.length > 0 ? (
+            gamificationData.activeChallenges.map((challenge) => {
+              const timeLeft = challenge.timeLeft;
+              const isUrgent = timeLeft < 24 * 60 * 60 * 1000; // Less than 24 hours
 
-            return (
-              <div key={challenge.id} className="p-3 border rounded-lg space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">{challenge.name}</h4>
-                  <Badge variant={isUrgent ? "destructive" : "secondary"} className="text-xs">
-                    {formatTimeLeft(timeLeft)}
-                  </Badge>
-                </div>
+              return (
+                <div
+                  key={challenge.id}
+                  className="p-3 border rounded-lg space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">{challenge.name}</h4>
+                    <Badge
+                      variant={isUrgent ? "destructive" : "secondary"}
+                      className="text-xs"
+                    >
+                      {formatTimeLeft(timeLeft)}
+                    </Badge>
+                  </div>
 
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Progress</span>
-                    <span>{challenge.progress}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${challenge.progress}%` }}
-                    />
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Progress</span>
+                      <span>{challenge.progress}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${challenge.progress}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              );
+            })
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No active challenges
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -164,9 +322,11 @@ export function GamificationSidebar() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
-            Save 10% more energy next week! 🌿 Based on your current usage patterns, reducing screen time by 30 minutes
-            daily could cut your energy consumption significantly.
+            {gamificationData.predictiveTip.message}
           </p>
+          <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">
+            Potential saving: {gamificationData.predictiveTip.potentialSaving}
+          </div>
           <Button
             size="sm"
             variant="outline"
@@ -180,12 +340,16 @@ export function GamificationSidebar() {
       {/* Generate Report */}
       <Card>
         <CardContent className="p-4">
-          <Button className="w-full bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white">
+          <Button
+            className="w-full bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white"
+            onClick={handleGenerateReport}
+            disabled={generatingReport}
+          >
             <FileText className="mr-2 h-4 w-4" />
-            Generate Report
+            {generatingReport ? "Generating..." : "Generate Report"}
           </Button>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

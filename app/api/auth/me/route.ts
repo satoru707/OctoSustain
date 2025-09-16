@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    console.log("Decoded token:", decoded);
     if (decoded.exp * 1000 < Date.now()) {
       request.cookies.delete("auth-token");
       return NextResponse.json({ error: "Token expired" }, { status: 401 });

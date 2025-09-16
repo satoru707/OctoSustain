@@ -1,19 +1,22 @@
-import { type NextRequest, NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
-import { prisma } from "@/lib/prisma"
+import { type NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/jwt";
+import { prisma } from "@/lib/prisma";
 
-export async function POST(request: NextRequest, { params }: { params: { podId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { podId: string } }
+) {
   try {
-    const token = request.cookies.get("auth-token")?.value
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any
-    const { podId } = params
-    const body = await request.json()
+    const decoded = verifyToken(token) as any;
+    const { podId } = params;
+    const body = await request.json();
 
-    const { category, value, unit, notes, imageUrl } = body
+    const { category, value, unit, notes, imageUrl } = body;
 
     const podMember = await prisma.podMember.findUnique({
       where: {
@@ -22,10 +25,10 @@ export async function POST(request: NextRequest, { params }: { params: { podId: 
           podId: podId,
         },
       },
-    })
+    });
 
     if (!podMember) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 })
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
     // CO2 calculation factors (kg CO2 per unit)
@@ -36,10 +39,11 @@ export async function POST(request: NextRequest, { params }: { params: { podId: 
       water: 0.17, // per L
       food: 1.4, // per meal
       custom: 0.9, // per action
-    }
+    };
 
-    const co2Saved = value * (co2Factors[category as keyof typeof co2Factors] || 0)
-    const points = Math.round(co2Saved * 10) // 10 points per kg CO2
+    const co2Saved =
+      value * (co2Factors[category as keyof typeof co2Factors] || 0);
+    const points = Math.round(co2Saved * 10); // 10 points per kg CO2
 
     const logEntry = await prisma.tentacleLog.create({
       data: {
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest, { params }: { params: { podId: 
         co2Saved: Math.round(co2Saved * 100) / 100,
         points,
       },
-    })
+    });
 
     await prisma.podMember.update({
       where: {
@@ -67,7 +71,7 @@ export async function POST(request: NextRequest, { params }: { params: { podId: 
           increment: points,
         },
       },
-    })
+    });
 
     await prisma.activity.create({
       data: {
@@ -82,7 +86,7 @@ export async function POST(request: NextRequest, { params }: { params: { podId: 
           points: points,
         },
       },
-    })
+    });
 
     return NextResponse.json({
       success: true,
@@ -99,9 +103,14 @@ export async function POST(request: NextRequest, { params }: { params: { podId: 
         points: logEntry.points,
         timestamp: logEntry.createdAt,
       },
-      message: `Great job! You saved ${co2Saved.toFixed(1)} kg CO2 and earned ${points} points!`,
-    })
+      message: `Great job! You saved ${co2Saved.toFixed(
+        1
+      )} kg CO2 and earned ${points} points!`,
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

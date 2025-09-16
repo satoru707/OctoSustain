@@ -1,4 +1,4 @@
-export const demo = { email: "demo@octosustain.com", password: "demo123" };
+export const demo = { email: "demo@octosustain.com", password: "password123" };
 
 export const demoPods = [
   {
@@ -92,4 +92,30 @@ export const demoPodData = {
   ],
   isLive: true,
   category: "Workplace",
+};
+
+export const recentPodData = {
+  name: "Green Office Warriors",
+  memberCount: 12,
+  activeMemberCount: 8,
+  recentMembers: [
+    {
+      id: "1",
+      name: "Alice Johnson",
+      avatar: "/diverse-woman-portrait.png",
+      lastActive: "2 min ago",
+    },
+    {
+      id: "2",
+      name: "Bob Smith",
+      avatar: "/thoughtful-man.png",
+      lastActive: "5 min ago",
+    },
+    {
+      id: "3",
+      name: "Carol Davis",
+      avatar: "/diverse-woman-portrait.png",
+      lastActive: "1 min ago",
+    },
+  ],
 };

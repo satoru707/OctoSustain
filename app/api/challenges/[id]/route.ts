@@ -1,13 +1,16 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: challengeId } = params
+    const { id: challengeId } = params;
 
     // Mock challenge details - replace with database queries
     const challenge = {
@@ -46,18 +49,41 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         { title: "Recycling Directory", url: "/resources/recycling" },
       ],
       timeline: [
-        { day: 1, title: "Waste Audit", description: "Measure and categorize all waste" },
-        { day: 2, title: "Reduction Plan", description: "Identify reduction opportunities" },
-        { day: 3, title: "Implementation", description: "Start waste reduction practices" },
+        {
+          day: 1,
+          title: "Waste Audit",
+          description: "Measure and categorize all waste",
+        },
+        {
+          day: 2,
+          title: "Reduction Plan",
+          description: "Identify reduction opportunities",
+        },
+        {
+          day: 3,
+          title: "Implementation",
+          description: "Start waste reduction practices",
+        },
         { day: 4, title: "Optimization", description: "Refine your approach" },
-        { day: 5, title: "Community Share", description: "Share tips with others" },
+        {
+          day: 5,
+          title: "Community Share",
+          description: "Share tips with others",
+        },
         { day: 6, title: "Final Push", description: "Achieve zero waste day" },
-        { day: 7, title: "Reflection", description: "Document learnings and results" },
+        {
+          day: 7,
+          title: "Reflection",
+          description: "Document learnings and results",
+        },
       ],
-    }
+    };
 
-    return NextResponse.json(challenge)
+    return NextResponse.json(challenge);
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

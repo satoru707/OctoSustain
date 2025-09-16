@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { Pod } from "@prisma/client";
 import { verifyToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { demo, demoPods } from "@/demo/data";
@@ -10,16 +11,13 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-    let pods = [];
-    if (decoded.email === demo.email && decoded.password === demo.password) {
+
+    let pods;
+    if (decoded.email === demo.email) {
       pods = demoPods;
     } else {
-      const userPods = await prisma.pod.findMany({
+      pods = (await prisma.pod.findMany({
         where: {
           members: {
             some: {
@@ -45,31 +43,48 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+      })) as any[];
+
+      pods = pods.map((pod) => {
+        return {
+          id: pod.id,
+          name: pod.name,
+          description: pod.description,
+          category: pod.category,
+          memberCount: pod._count,
+          members: pod.members.map((member: any) => ({
+            id: member.id,
+            joinedAt: member.joinedAt,
+            role: member.role,
+            userId: member.userId,
+            user: {
+              id: member.user.id,
+              name: member.user.name,
+              avatar: member.user.avatar || "/diverse-woman-portrait.png",
+            },
+          })),
+        };
       });
-
-      // Transform data to match frontend expectations
-      pods = userPods.map((pod) => ({
-        id: pod.id,
-        name: pod.name,
-        description: pod.description,
-        memberCount: pod._count.members,
-        members: pod.members.map((member) => ({
-          id: member.user.id,
-          name: member.user.name,
-          avatar: member.user.avatar || "/diverse-woman-portrait.png",
-        })),
-        isLive: true, // Could be calculated based on recent activity
-        inviteCode: pod.inviteCode,
-      }));
     }
-
-    return NextResponse.json({ pods }, { status: 200 });
+    return NextResponse.json(
+      {
+        pods,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    console.error("Pod fetch error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const token = request.cookies.get("auth-token")?.value;
 
@@ -78,56 +93,84 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    const podId = params.id;
+
+    // Handle demo user
+    if (decoded.email === demo.email && decoded.password === demo.password) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Already a member",
+          alreadyMember: true,
+        },
+        { status: 200 }
+      );
     }
 
-    const { name, description } = await request.json();
+    // Check if pod exists
+    const pod = await prisma.pod.findUnique({
+      where: { id: podId },
+      select: { id: true, name: true },
+    });
 
-    const newPod = await prisma.pod.create({
-      data: {
-        name,
-        description,
-        members: {
-          create: {
-            userId: decoded.userId,
-            role: "admin",
-            points: 0,
-          },
-        },
-      },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
-          },
+    if (!pod) {
+      return NextResponse.json({ error: "Pod not found" }, { status: 404 });
+    }
+
+    // Check if user is already a member
+    const existingMembership = await prisma.podMember.findUnique({
+      where: {
+        userId_podId: {
+          userId: decoded.userId,
+          podId: podId,
         },
       },
     });
 
-    // Transform response to match frontend expectations
-    const pod = {
-      id: newPod.id,
-      name: newPod.name,
-      description: newPod.description,
-      memberCount: 1,
-      members: newPod.members.map((member) => ({
-        id: member.user.id,
-        name: member.user.name,
-        avatar: member.user.avatar || "/diverse-woman-portrait.png",
-      })),
-      isLive: true,
-      inviteCode: newPod.inviteCode,
-    };
+    if (existingMembership) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Already a member",
+          alreadyMember: true,
+        },
+        { status: 200 }
+      );
+    }
 
-    return NextResponse.json({ pod }, { status: 201 });
+    // Add user as a member
+    await prisma.podMember.create({
+      data: {
+        userId: decoded.userId,
+        podId: podId,
+        role: "member",
+        points: 0,
+      },
+    });
+
+    // Create activity log
+    await prisma.activity.create({
+      data: {
+        userId: decoded.userId,
+        podId: podId,
+        type: "pod_join",
+        details: {
+          podName: pod.name,
+          joinMethod: "invite_link",
+        },
+      },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Successfully joined the pod!",
+        alreadyMember: false,
+      },
+      { status: 200 }
+    );
   } catch (error) {
+    console.error("Pod invite error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

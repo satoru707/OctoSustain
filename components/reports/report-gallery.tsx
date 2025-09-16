@@ -5,8 +5,6 @@ import { ChallengeCard } from "@/components/challenges/challenge-card";
 import { EmptyStateChallenges } from "@/components/challenges/empty-state-challenges";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
-import { ChallengesHeader } from "@/components/challenges/challenges-header";
-
 import { toast } from "sonner";
 
 interface Challenge {
@@ -78,56 +76,47 @@ export function ChallengesList() {
   }
 
   if (filteredChallenges.length === 0) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ChallengesHeader data={challenges} />
-        <EmptyStateChallenges filter={activeTab} />;
-      </div>
-    );
+    return <EmptyStateChallenges filter={activeTab} />;
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <ChallengesHeader data={challenges} />
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
+          <TabsTrigger
+            value="all"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
+            All Challenges
+          </TabsTrigger>
+          <TabsTrigger
+            value="active"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
+            My Active
+          </TabsTrigger>
+          <TabsTrigger
+            value="available"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
+            Available
+          </TabsTrigger>
+          <TabsTrigger
+            value="completed"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white"
+          >
+            Completed
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
-            <TabsTrigger
-              value="all"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              All Challenges
-            </TabsTrigger>
-            <TabsTrigger
-              value="active"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              My Active
-            </TabsTrigger>
-            <TabsTrigger
-              value="available"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              Available
-            </TabsTrigger>
-            <TabsTrigger
-              value="completed"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              Completed
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={activeTab} className="mt-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredChallenges.map((challenge) => (
-                <ChallengeCard key={challenge.id} challenge={challenge} />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value={activeTab} className="mt-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredChallenges.map((challenge) => (
+              <ChallengeCard key={challenge.id} challenge={challenge} />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

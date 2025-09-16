@@ -18,6 +18,7 @@ interface PodHeaderProps {
   pod: {
     id: string;
     name: string;
+    category: string;
     user: User;
     description: string;
     memberCount: number;

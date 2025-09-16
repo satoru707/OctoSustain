@@ -34,6 +34,7 @@ model Pod {
   id          String   @id @default(cuid())
   name        String
   description String?
+  category    String? 
   inviteCode  String   @unique @default(cuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -187,4 +188,12 @@ model Goal {
   updatedAt DateTime @updatedAt
 
   @@map("goals")
+}
+
+enum CategoryProps {
+  Workplace
+  Family
+  Education
+  Community
+  Personal
 }

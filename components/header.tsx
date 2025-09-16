@@ -6,29 +6,39 @@ import { OctopusLogo } from "@/components/octopus-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Menu, X, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const response = await fetch("/api/auth/me");
-        setIsAuthenticated(response.ok);
+        if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          if (
+            pathname !== "/auth/signin" &&
+            pathname !== "/auth/signup" &&
+            pathname !== "/"
+          ) {
+            // router.push("/auth/signin");
+          }
+        }
       } catch {
         setIsAuthenticated(false);
       }
     };
     checkAuth();
-  }, []);
+  }, [pathname]);
 
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/pods", label: "Pods" },
-    { href: "/dashboard", label: "Dashboard" },
     { href: "/challenges", label: "Challenges" },
     { href: "/reports", label: "Reports" },
   ];
@@ -62,7 +72,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-right space-x-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}

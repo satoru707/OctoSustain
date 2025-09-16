@@ -1,24 +1,24 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { verifyToken } from "@/lib/jwt"
+import { type NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/jwt";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value;
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = await verifyToken(token)
+    const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const podId = searchParams.get("podId")
-    const category = searchParams.get("category")
-    const challengeId = searchParams.get("challengeId")
-    const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "20")
+    const { searchParams } = new URL(request.url);
+    const podId = searchParams.get("podId");
+    const category = searchParams.get("category");
+    const challengeId = searchParams.get("challengeId");
+    const page = Number.parseInt(searchParams.get("page") || "1");
+    const limit = Number.parseInt(searchParams.get("limit") || "20");
 
     // Mock file listing - replace with database queries
     const mockFiles = [
@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
         originalName: "waste_sorting_photo.jpg",
         fileName: "image_1704067200000_abc123.jpg",
         url: "/uploads/image_1704067200000_abc123.jpg",
-        thumbnailUrl: "/uploads/thumbnails/thumb_image_1704067200000_abc123.jpg",
+        thumbnailUrl:
+          "/uploads/thumbnails/thumb_image_1704067200000_abc123.jpg",
         type: "image/jpeg",
         size: 2048576,
         category: "waste",
@@ -52,25 +53,27 @@ export async function GET(request: NextRequest) {
         uploadedAt: new Date("2024-01-02T14:30:00Z"),
         metadata: { pages: 5 },
       },
-    ]
+    ];
 
-    let filteredFiles = mockFiles
+    let filteredFiles = mockFiles;
 
     // Apply filters
     if (podId) {
-      filteredFiles = filteredFiles.filter((f) => f.podId === podId)
+      filteredFiles = filteredFiles.filter((f) => f.podId === podId);
     }
     if (category) {
-      filteredFiles = filteredFiles.filter((f) => f.category === category)
+      filteredFiles = filteredFiles.filter((f) => f.category === category);
     }
     if (challengeId) {
-      filteredFiles = filteredFiles.filter((f) => f.challengeId === challengeId)
+      filteredFiles = filteredFiles.filter(
+        (f) => f.challengeId === challengeId
+      );
     }
 
     // Pagination
-    const startIndex = (page - 1) * limit
-    const endIndex = startIndex + limit
-    const paginatedFiles = filteredFiles.slice(startIndex, endIndex)
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
 
     return NextResponse.json({
       files: paginatedFiles,
@@ -87,12 +90,18 @@ export async function GET(request: NextRequest) {
         totalSize: mockFiles.reduce((sum, f) => sum + f.size, 0),
         categories: {
           image: mockFiles.filter((f) => f.type.startsWith("image/")).length,
-          document: mockFiles.filter((f) => f.type === "application/pdf").length,
-          other: mockFiles.filter((f) => !f.type.startsWith("image/") && f.type !== "application/pdf").length,
+          document: mockFiles.filter((f) => f.type === "application/pdf")
+            .length,
+          other: mockFiles.filter(
+            (f) => !f.type.startsWith("image/") && f.type !== "application/pdf"
+          ).length,
         },
       },
-    })
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
