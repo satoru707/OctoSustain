@@ -6,68 +6,90 @@ import { EmptyStateChallenges } from "@/components/challenges/empty-state-challe
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { ChallengesHeader } from "@/components/challenges/challenges-header";
-
 import { toast } from "sonner";
 
 interface Challenge {
-  id: string;
-  name: string;
-  description: string;
   category: string;
+  description: string;
   difficulty: string;
   duration: number;
-  timeLeft: number;
+  endDate: string;
+  id: string;
+  isActive: boolean;
+  isCompleted: boolean;
+  isJoined: boolean;
+  isUpcoming: boolean;
+  maxParticipants: number;
+  name: string;
   participants: number;
-  podProgress: number;
-  userJoined: boolean;
-  userCompleted: boolean;
   points: number;
-  icon: string;
+
+  progress: number;
+
+  requirements: string[];
+  rewards: string[];
+  startDate: string;
+  timeLeft: number;
 }
 
 export function ChallengesList() {
   const [activeTab, setActiveTab] = useState("all");
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchChallenges = async () => {
+    try {
+      const response = await fetch("/api/challenges");
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Challenges", data.challenges);
+
+        setChallenges(data.challenges);
+      } else {
+        toast.error("Failed to fetch challenges");
+      }
+    } catch (error) {
+      console.error("Failed to fetch challenges:", error);
+      toast.error("Failed to fetch challenges");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchChallenges = async () => {
-      try {
-        const response = await fetch("/api/challenges");
-        if (response.ok) {
-          const data = await response.json();
-          setChallenges(data.challenges);
-        } else {
-          toast.error("Failed to fetch challenges");
-        }
-      } catch (error) {
-        console.error("Failed to fetch challenges:", error);
-        toast.error("Failed to fetch challenges");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchChallenges();
   }, []);
 
   const filterChallenges = (filter: string) => {
+    let filtered = challenges;
+
+    // Apply search filter first
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Then apply tab filter
     switch (filter) {
       case "active":
-        return challenges.filter(
-          (c) => c.timeLeft > 0 && c.userJoined && !c.userCompleted
+        return filtered.filter(
+          (c) => c.timeLeft > 0 && c.isJoined && !c.isCompleted
         );
       case "available":
-        return challenges.filter((c) => c.timeLeft > 0 && !c.userJoined);
+        return filtered.filter((c) => c.timeLeft > 0 && !c.isJoined);
       case "completed":
-        return challenges.filter((c) => c.userCompleted);
+        return filtered.filter((c) => c.isCompleted);
       default:
-        return challenges;
+        return filtered;
     }
   };
 
   const filteredChallenges = filterChallenges(activeTab);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -77,18 +99,13 @@ export function ChallengesList() {
     );
   }
 
-  if (filteredChallenges.length === 0) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ChallengesHeader data={challenges} />
-        <EmptyStateChallenges filter={activeTab} />;
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <ChallengesHeader data={challenges} />
+      <ChallengesHeader
+        data={challenges}
+        onSearch={setSearchQuery}
+        searchQuery={searchQuery}
+      />
 
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -120,11 +137,15 @@ export function ChallengesList() {
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredChallenges.map((challenge) => (
-                <ChallengeCard key={challenge.id} challenge={challenge} />
-              ))}
-            </div>
+            {filteredChallenges.length === 0 ? (
+              <EmptyStateChallenges filter={activeTab} />
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredChallenges.map((challenge) => (
+                  <ChallengeCard key={challenge.id} challenge={challenge} />
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

@@ -19,7 +19,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
         <div className="lg:col-span-3 space-y-8">
           {/* Central octopus visualization */}
           <div className="flex justify-center">
-            <OctopusVisualization />
+            <OctopusVisualization podId={params.podId} />
           </div>
 
           {/* Tentacle tracker sections */}

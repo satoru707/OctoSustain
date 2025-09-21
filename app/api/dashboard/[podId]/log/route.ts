@@ -12,7 +12,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token) as any;
+    const decoded = verifyToken(token);
     const { podId } = params;
     const body = await request.json();
 
@@ -107,7 +107,7 @@ export async function POST(
         1
       )} kg CO2 and earned ${points} points!`,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

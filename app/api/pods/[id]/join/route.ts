@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { demo } from "@/demo/data";
+import { TokenProps } from "@/types/types";
 
 export async function GET(
   request: NextRequest,
@@ -15,15 +16,13 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token) as any;
+    const decoded = verifyToken(token) as TokenProps;
     const podId = params.id;
-    console.log("Pod ID", podId);
 
     // Check if pod exists
     const pod = await prisma.pod.findUnique({
       where: { id: podId },
     });
-    console.log("Pod found", pod);
 
     if (!pod) {
       return NextResponse.json({ error: "Pod not found" }, { status: 404 });
@@ -60,7 +59,7 @@ export async function GET(
       success: true,
       message: "Successfully joined pod",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -79,11 +78,11 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token) as any;
+    const decoded = verifyToken(token) as TokenProps;
     const podId = params.id;
 
     // Handle demo user
-    if (decoded.email === demo.email && decoded.password === demo.password) {
+    if (decoded.email === demo.email) {
       return NextResponse.json(
         {
           success: true,

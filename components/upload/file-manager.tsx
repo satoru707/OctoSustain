@@ -1,69 +1,93 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Upload, Search, Trash2, Tag, FolderOpen, ImageIcon, FileText, File, MoreHorizontal } from "lucide-react"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Upload,
+  Search,
+  Trash2,
+  Tag,
+  FolderOpen,
+  ImageIcon,
+  FileText,
+  File,
+  MoreHorizontal,
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface FileManagerProps {
-  podId?: string
-  challengeId?: string
-  category?: string
-  onFileSelect?: (file: any) => void
-  allowMultiple?: boolean
+  podId?: string;
+  challengeId?: string;
+  category?: string;
+  onFileSelect?: (file) => void;
+  allowMultiple?: boolean;
 }
 
-export function FileManager({ podId, challengeId, category, onFileSelect, allowMultiple = false }: FileManagerProps) {
-  const [files, setFiles] = useState<any[]>([])
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterCategory, setFilterCategory] = useState(category || "all")
-  const [isLoading, setIsLoading] = useState(false)
-  const [showUpload, setShowUpload] = useState(false)
+export function FileManager({
+  podId,
+  challengeId,
+  category,
+  onFileSelect,
+  allowMultiple = false,
+}: FileManagerProps) {
+  const [files, setFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState(category || "all");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetchFiles()
-  }, [podId, challengeId, filterCategory])
+    const fetchFiles = async () => {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (podId) params.append("podId", podId);
+        if (challengeId) params.append("challengeId", challengeId);
+        if (filterCategory !== "all") params.append("category", filterCategory);
 
-  const fetchFiles = async () => {
-    setIsLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (podId) params.append("podId", podId)
-      if (challengeId) params.append("challengeId", challengeId)
-      if (filterCategory !== "all") params.append("category", filterCategory)
-
-      const response = await fetch(`/api/files?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setFiles(data.files)
+        const response = await fetch(`/api/files?${params}`);
+        if (response.ok) {
+          const data = await response.json();
+          setFiles(data.files);
+        }
+      } catch {
+        toast.error("Failed to load files");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast.error("Failed to load files")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    };
+    fetchFiles();
+  }, [podId, challengeId, filterCategory]);
 
   const handleFileSelect = (fileId: string) => {
     if (allowMultiple) {
-      setSelectedFiles((prev) => (prev.includes(fileId) ? prev.filter((id) => id !== fileId) : [...prev, fileId]))
+      setSelectedFiles((prev) =>
+        prev.includes(fileId)
+          ? prev.filter((id) => id !== fileId)
+          : [...prev, fileId]
+      );
     } else {
-      const file = files.find((f) => f.id === fileId)
+      const file = files.find((f) => f.id === fileId);
       if (file && onFileSelect) {
-        onFileSelect(file)
+        onFileSelect(file);
       }
     }
-  }
+  };
 
-  const handleBulkAction = async (action: string, data?: any) => {
+  const handleBulkAction = async (action, data) => {
     if (selectedFiles.length === 0) {
-      toast.error("No files selected")
-      return
+      toast.error("No files selected");
+      return;
     }
 
     try {
@@ -75,47 +99,53 @@ export function FileManager({ podId, challengeId, category, onFileSelect, allowM
           fileIds: selectedFiles,
           data,
         }),
-      })
+      });
 
       if (response.ok) {
-        const result = await response.json()
-        toast.success(result.message)
-        setSelectedFiles([])
-        fetchFiles()
+        const result = await response.json();
+        toast.success(result.message);
+        setSelectedFiles([]);
       } else {
-        toast.error("Bulk action failed")
+        toast.error("Bulk action failed");
       }
-    } catch (error) {
-      toast.error("An error occurred")
+    } catch {
+      toast.error("An error occurred");
     }
-  }
+  };
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />
-    if (type === "application/pdf") return <FileText className="h-4 w-4" />
-    return <File className="h-4 w-4" />
-  }
+    if (type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />;
+    if (type === "application/pdf") return <FileText className="h-4 w-4" />;
+    return <File className="h-4 w-4" />;
+  };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (
+      Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+    );
+  };
 
   const filteredFiles = files.filter(
     (file) =>
       file.originalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      file.tags?.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase())),
-  )
+      file.tags?.some((tag: string) =>
+        tag.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  );
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">File Manager</h3>
-        <Button onClick={() => setShowUpload(true)} className="bg-eco-primary hover:bg-eco-primary/90">
+        <Button
+          onClick={() => setShowUpload(true)}
+          className="bg-eco-primary hover:bg-eco-primary/90"
+        >
           <Upload className="mr-2 h-4 w-4" />
           Upload Files
         </Button>
@@ -150,12 +180,22 @@ export function FileManager({ podId, challengeId, category, onFileSelect, allowM
       {/* Bulk Actions */}
       {selectedFiles.length > 0 && (
         <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-          <span className="text-sm font-medium">{selectedFiles.length} files selected</span>
-          <Button size="sm" variant="outline" onClick={() => handleBulkAction("delete")}>
+          <span className="text-sm font-medium">
+            {selectedFiles.length} files selected
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleBulkAction("delete")}
+          >
             <Trash2 className="mr-2 h-3 w-3" />
             Delete
           </Button>
-          <Button size="sm" variant="outline" onClick={() => handleBulkAction("tag", { tags: ["bulk-tagged"] })}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleBulkAction("tag", { tags: ["bulk-tagged"] })}
+          >
             <Tag className="mr-2 h-3 w-3" />
             Tag
           </Button>
@@ -177,7 +217,10 @@ export function FileManager({ podId, challengeId, category, onFileSelect, allowM
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
                 {allowMultiple && (
-                  <Checkbox checked={selectedFiles.includes(file.id)} onChange={() => handleFileSelect(file.id)} />
+                  <Checkbox
+                    checked={selectedFiles.includes(file.id)}
+                    onChange={() => handleFileSelect(file.id)}
+                  />
                 )}
                 {getFileIcon(file.type)}
               </div>
@@ -195,8 +238,12 @@ export function FileManager({ podId, challengeId, category, onFileSelect, allowM
             )}
 
             <div className="space-y-1">
-              <p className="text-sm font-medium truncate">{file.originalName}</p>
-              <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+              <p className="text-sm font-medium truncate">
+                {file.originalName}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatFileSize(file.size)}
+              </p>
               <div className="flex items-center gap-1">
                 <Badge variant="outline" className="text-xs">
                   {file.category}
@@ -219,5 +266,5 @@ export function FileManager({ podId, challengeId, category, onFileSelect, allowM
         </div>
       )}
     </div>
-  )
+  );
 }

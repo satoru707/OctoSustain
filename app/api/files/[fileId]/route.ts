@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/jwt";
+import { TokenProps } from "@/types/types";
 
 export async function GET(
   request: NextRequest,
@@ -42,7 +43,7 @@ export async function GET(
     };
 
     return NextResponse.json(fileDetails);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -60,7 +61,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token) as any;
+    const decoded = verifyToken(token) as TokenProps;
     const { fileId } = params;
 
     // Mock file deletion - replace with real file deletion and database cleanup
@@ -76,7 +77,7 @@ export async function DELETE(
       success: true,
       message: "File deleted successfully",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -94,7 +95,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token) as any;
+    const decoded = verifyToken(token) as TokenProps;
     const { fileId } = params;
     const body = await request.json();
 
@@ -108,7 +109,7 @@ export async function PATCH(
       message: "File updated successfully",
       updatedFields: { tags, category, description },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

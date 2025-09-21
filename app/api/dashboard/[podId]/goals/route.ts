@@ -1,17 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/jwt";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { podId: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const { podId } = params;
 
     // Mock goals data - replace with database queries
     const goals = {
@@ -34,7 +28,7 @@ export async function GET(
     };
 
     return NextResponse.json(goals);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -52,7 +46,6 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token) as any;
     const { podId } = params;
     const body = await request.json();
 
@@ -63,7 +56,7 @@ export async function PUT(
       success: true,
       message: "Goals updated successfully",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

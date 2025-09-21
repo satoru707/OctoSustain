@@ -1,10 +1,10 @@
-import { BarChart3, TrendingUp, Award } from "lucide-react"
+import { BarChart3, TrendingUp, Award } from "lucide-react";
 
 interface ReportsHeaderProps {
-  podId: string
+  podId: string;
 }
 
-export function ReportsHeader({ podId }: ReportsHeaderProps) {
+export function ReportsHeader() {
   return (
     <div className="relative mb-8 p-6 bg-gradient-to-r from-primary/10 via-emerald-50 to-teal-50 dark:from-primary/20 dark:via-emerald-950 dark:to-teal-950 rounded-xl border border-primary/20">
       <div className="flex items-center gap-3 mb-4">
@@ -12,8 +12,12 @@ export function ReportsHeader({ podId }: ReportsHeaderProps) {
           <BarChart3 className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Environmental Impact Reports</h2>
-          <p className="text-sm text-muted-foreground">Track your pod's sustainability progress and achievements</p>
+          <h2 className="text-xl font-semibold text-foreground">
+            Environmental Impact Reports
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Track your pod&apos;s sustainability progress and achievements
+          </p>
         </div>
       </div>
 
@@ -22,7 +26,9 @@ export function ReportsHeader({ podId }: ReportsHeaderProps) {
           <TrendingUp className="h-5 w-5 text-green-600" />
           <div>
             <div className="text-lg font-bold text-foreground">2.4 tons</div>
-            <div className="text-xs text-muted-foreground">CO2 Saved This Month</div>
+            <div className="text-xs text-muted-foreground">
+              CO2 Saved This Month
+            </div>
           </div>
         </div>
 
@@ -30,7 +36,9 @@ export function ReportsHeader({ podId }: ReportsHeaderProps) {
           <Award className="h-5 w-5 text-primary" />
           <div>
             <div className="text-lg font-bold text-foreground">15</div>
-            <div className="text-xs text-muted-foreground">Reports Generated</div>
+            <div className="text-xs text-muted-foreground">
+              Reports Generated
+            </div>
           </div>
         </div>
 
@@ -38,10 +46,12 @@ export function ReportsHeader({ podId }: ReportsHeaderProps) {
           <BarChart3 className="h-5 w-5 text-blue-600" />
           <div>
             <div className="text-lg font-bold text-foreground">92%</div>
-            <div className="text-xs text-muted-foreground">Goal Achievement</div>
+            <div className="text-xs text-muted-foreground">
+              Goal Achievement
+            </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

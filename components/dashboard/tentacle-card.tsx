@@ -17,7 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, Upload, TrendingUp, Loader2, X } from "lucide-react";
 import { TentacleChart } from "@/components/dashboard/tentacle-chart";
-import { SuccessConfetti } from "@/components/auth/success-confetti";
 import { toast } from "sonner";
 
 interface Category {
@@ -53,7 +52,6 @@ export function TentacleCard({ category, podId }: TentacleCardProps) {
     notes: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [co2Saved, setCo2Saved] = useState<number | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -67,6 +65,7 @@ export function TentacleCard({ category, podId }: TentacleCardProps) {
         if (response.ok) {
           const data = await response.json();
           setTentacleData(data.tentacles[category.id]);
+          console.log("datum", data.tentacles[category.id]);
         }
       } catch (error) {
         console.error("Failed to fetch tentacle data:", error);
@@ -108,11 +107,11 @@ export function TentacleCard({ category, podId }: TentacleCardProps) {
     }
   };
 
-  const handleUploadClick = () => {
-    toast.info("Feature coming soon.");
-    return;
-    fileInputRef.current?.click();
-  };
+  // const handleUploadClick = () => {
+  //   toast.info("Feature coming soon.");
+  //   return;
+  //   fileInputRef.current?.click();
+  // };
 
   const handleRemoveImage = () => {
     setUploadedImage(null);
@@ -145,7 +144,6 @@ export function TentacleCard({ category, podId }: TentacleCardProps) {
       if (response.ok) {
         const data = await response.json();
         setCo2Saved(data.data.co2Saved);
-        setShowSuccess(true);
         toast.success(data.message);
 
         // Reset form
@@ -161,7 +159,6 @@ export function TentacleCard({ category, podId }: TentacleCardProps) {
 
         // Hide success after animation
         setTimeout(() => {
-          setShowSuccess(false);
           setCo2Saved(null);
         }, 3000);
       } else {
@@ -248,7 +245,7 @@ export function TentacleCard({ category, podId }: TentacleCardProps) {
 
               {category.id === "waste" && (
                 <div className="space-y-2">
-                  <Label>Upload Photo (Optional)</Label>
+                  <Label>Upload Photo (Coming soon)</Label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -365,12 +362,13 @@ export function TentacleCard({ category, podId }: TentacleCardProps) {
                 This Week
               </Badge>
             </div>
-            <TentacleChart category={category} />
+            <TentacleChart
+              category={category}
+              data={tentacleData?.weeklyData}
+            />
           </div>
         </CardContent>
       </Card>
-
-      {showSuccess && <SuccessConfetti />}
     </>
   );
 }

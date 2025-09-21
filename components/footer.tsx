@@ -45,7 +45,7 @@ export function Footer() {
         {/* Bottom copyright */}
         <div className="mt-6 pt-6 border-t border-border text-center">
           <p className="text-xs text-muted-foreground">
-            © 2024 OctoSustain. All rights reserved. Built with 💚 for the
+            © 2025 OctoSustain. All rights reserved. Built with 💚 for the
             planet.
           </p>
         </div>

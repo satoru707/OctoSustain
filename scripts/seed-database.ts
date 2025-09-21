@@ -1,13 +1,11 @@
-import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcryptjs"
-
-const prisma = new PrismaClient()
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
 async function main() {
-  console.log("🌱 Seeding database...")
+  console.log("🌱 Seeding database...");
 
   // Create demo users
-  const demoPassword = await bcrypt.hash("demo123", 10)
+  const demoPassword = await bcrypt.hash("demo123", 10);
 
   const demoUser = await prisma.user.upsert({
     where: { email: "demo@octosustain.com" },
@@ -18,7 +16,7 @@ async function main() {
       name: "Demo User",
       avatar: "/friendly-person.jpg",
     },
-  })
+  });
 
   const alexUser = await prisma.user.upsert({
     where: { email: "alex@octosustain.com" },
@@ -29,7 +27,7 @@ async function main() {
       name: "Alex Chen",
       avatar: "/thoughtful-asian-person.png",
     },
-  })
+  });
 
   const mariaUser = await prisma.user.upsert({
     where: { email: "maria@octosustain.com" },
@@ -40,7 +38,7 @@ async function main() {
       name: "Maria Garcia",
       avatar: "/confident-latina-woman.png",
     },
-  })
+  });
 
   // Create demo pod
   const demoPod = await prisma.pod.upsert({
@@ -48,10 +46,11 @@ async function main() {
     update: {},
     create: {
       name: "EcoWarriors Demo Pod",
-      description: "A demonstration pod showcasing OctoSustain features with sample environmental tracking data.",
+      description:
+        "A demonstration pod showcasing OctoSustain features with sample environmental tracking data.",
       inviteCode: "DEMO-POD-2024",
     },
-  })
+  });
 
   // Add users to pod
   await prisma.podMember.upsert({
@@ -68,7 +67,7 @@ async function main() {
       role: "admin",
       points: 1250,
     },
-  })
+  });
 
   await prisma.podMember.upsert({
     where: {
@@ -84,7 +83,7 @@ async function main() {
       role: "member",
       points: 890,
     },
-  })
+  });
 
   await prisma.podMember.upsert({
     where: {
@@ -100,18 +99,18 @@ async function main() {
       role: "member",
       points: 1100,
     },
-  })
+  });
 
   // Create sample tentacle logs
-  const categories = ["energy", "waste", "transport", "water", "food"]
-  const users = [demoUser, alexUser, mariaUser]
+  const categories = ["energy", "waste", "transport", "water", "food"];
+  const users = [demoUser, alexUser, mariaUser];
 
   for (let i = 0; i < 50; i++) {
-    const user = users[Math.floor(Math.random() * users.length)]
-    const category = categories[Math.floor(Math.random() * categories.length)]
-    const value = Math.random() * 100 + 10
-    const co2Saved = value * 0.5 + Math.random() * 10
-    const points = Math.floor(co2Saved * 2)
+    const user = users[Math.floor(Math.random() * users.length)];
+    const category = categories[Math.floor(Math.random() * categories.length)];
+    const value = Math.random() * 100 + 10;
+    const co2Saved = value * 0.5 + Math.random() * 10;
+    const points = Math.floor(co2Saved * 2);
 
     await prisma.tentacleLog.create({
       data: {
@@ -123,9 +122,11 @@ async function main() {
         notes: `Sample ${category} tracking entry`,
         co2Saved,
         points,
-        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date within last 30 days
+        createdAt: new Date(
+          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+        ), // Random date within last 30 days
       },
-    })
+    });
   }
 
   // Create sample challenges
@@ -143,7 +144,8 @@ async function main() {
     },
     {
       title: "Bike to Work Challenge",
-      description: "Cycle to work for 5 consecutive days and track your carbon footprint reduction.",
+      description:
+        "Cycle to work for 5 consecutive days and track your carbon footprint reduction.",
       category: "transport",
       target: 50,
       unit: "km",
@@ -153,7 +155,8 @@ async function main() {
     },
     {
       title: "Energy Saver Sprint",
-      description: "Reduce your energy consumption by 20% compared to last month's average.",
+      description:
+        "Reduce your energy consumption by 20% compared to last month's average.",
       category: "energy",
       target: 20,
       unit: "%",
@@ -161,14 +164,14 @@ async function main() {
       startDate: new Date("2024-01-10"),
       endDate: new Date("2024-01-24"),
     },
-  ]
+  ];
 
   for (const challengeData of challenges) {
     const challenge = await prisma.challenge.upsert({
       where: { title: challengeData.title },
       update: {},
       create: challengeData,
-    })
+    });
 
     // Add some participants
     await prisma.challengeParticipation.upsert({
@@ -184,18 +187,18 @@ async function main() {
         challengeId: challenge.id,
         progress: Math.random() * 100,
       },
-    })
+    });
   }
 
-  console.log("✅ Database seeded successfully!")
-  console.log("🔑 Demo login: demo@octosustain.com / demo123")
+  console.log("✅ Database seeded successfully!");
+  console.log("🔑 Demo login: demo@octosustain.com / demo123");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding failed:", e)
-    process.exit(1)
+    console.error("❌ Seeding failed:", e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

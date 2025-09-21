@@ -1,88 +1,107 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+interface ChallengeProps {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  points: number;
+  startDate: string;
+  endDate: string;
+  progress: number;
+  isCompleted: boolean;
+  createdBy: string;
+  creatorName: string;
+  participants: {
+    id: string;
+    name: string;
+    progress: number;
+    user?: { id: string; name: string; email: string; progress: number };
+  }[];
+  goals: {
+    id: string;
+    title: string;
+    target: number;
+    current: number;
+    unit: string;
+  }[];
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = request.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.log("ChallengeId", params);
+    const challengeId = params.id;
+
+    const challenge = await prisma.challenge.findUnique({
+      where: { id: challengeId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!challenge) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 404 }
+      );
     }
 
-    const { id: challengeId } = params;
+    const getDifficulty = (points: number) => {
+      if (points > 100) return "Hard";
+      if (points > 50) return "Medium";
+      return "Easy";
+    };
 
-    // Mock challenge details - replace with database queries
-    const challenge = {
-      id: challengeId,
-      name: "Zero Waste Week",
-      description:
-        "Reduce your waste to zero for an entire week by composting, recycling, and avoiding single-use items.",
-      longDescription:
-        "This comprehensive challenge will help you understand your waste patterns and develop sustainable habits. You'll learn to identify waste sources, implement reduction strategies, and track your progress toward zero waste living.",
-      category: "waste",
-      difficulty: "Hard",
-      points: 150,
-      duration: 7 * 24 * 60 * 60 * 1000,
-      startDate: new Date("2024-01-15"),
-      endDate: new Date("2024-01-22"),
-      participants: 24,
-      maxParticipants: 50,
-      progress: 65,
-      isJoined: true,
-      requirements: [
-        "Log daily waste measurements",
-        "Upload photos of waste sorting",
-        "Complete daily check-ins",
-        "Share tips with community",
-      ],
-      rewards: ["150 Ink Points", "Zero Waste Badge", "Eco Champion Title"],
-      tips: [
-        "Start by auditing your current waste for one day",
-        "Invest in reusable containers and bags",
-        "Learn about local composting and recycling programs",
-        "Plan meals to reduce food waste",
-      ],
-      resources: [
-        { title: "Zero Waste Guide", url: "/resources/zero-waste-guide" },
-        { title: "Composting Basics", url: "/resources/composting" },
-        { title: "Recycling Directory", url: "/resources/recycling" },
-      ],
-      timeline: [
+    const transformedChallenge: ChallengeProps = {
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description,
+      category: challenge.category,
+      difficulty: getDifficulty(challenge.points),
+      points: challenge.points,
+      startDate: challenge.startDate.toISOString(),
+      endDate: challenge.endDate.toISOString(),
+      progress: (challenge.points / challenge.target) * 100,
+      isCompleted: new Date() > challenge.endDate,
+      createdBy: challenge.participants[0].user.name,
+      creatorName: challenge.participants[0].user.name,
+      participants: challenge.participants.map((participant) => ({
+        id: participant.user.id,
+        name: participant.user.name || participant.user.email,
+        progress: participant.progress || 0,
+      })),
+      goals: [
         {
-          day: 1,
-          title: "Waste Audit",
-          description: "Measure and categorize all waste",
-        },
-        {
-          day: 2,
-          title: "Reduction Plan",
-          description: "Identify reduction opportunities",
-        },
-        {
-          day: 3,
-          title: "Implementation",
-          description: "Start waste reduction practices",
-        },
-        { day: 4, title: "Optimization", description: "Refine your approach" },
-        {
-          day: 5,
-          title: "Community Share",
-          description: "Share tips with others",
-        },
-        { day: 6, title: "Final Push", description: "Achieve zero waste day" },
-        {
-          day: 7,
-          title: "Reflection",
-          description: "Document learnings and results",
+          id: "1",
+          title: `Reach ${challenge.target} ${challenge.unit}`,
+          target: challenge.target,
+          current: challenge.points,
+          unit: challenge.unit,
         },
       ],
     };
+    console.log("Get particular memory", transformedChallenge);
 
-    return NextResponse.json(challenge);
+    return NextResponse.json(transformedChallenge);
   } catch (error) {
+    console.error("Error fetching challenge:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to fetch challenge" },
       { status: 500 }
     );
   }

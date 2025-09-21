@@ -1,26 +1,22 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
-import { demo, demoPods, demoPodData } from "@/demo/data";
+import { demo, demoPodData } from "@/demo/data";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("Fetching pod with ID:", params.id);
-
     const token = request.cookies.get("auth-token")?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.log("Token found", token);
 
     const verified = verifyToken(token);
     const podId = params.id;
-    console.log("Pod ID", podId);
-    var pod = [] as any;
+    let pod = [];
     if (verified.email === demo.email && verified.password === demo.password) {
       pod = demoPodData;
     } else {
@@ -45,7 +41,6 @@ export async function GET(
           },
         },
       });
-      console.log("Pod found", pod);
 
       if (pod.length === 0 || !pod) {
         return NextResponse.json({ error: "Pod not found" }, { status: 404 });
@@ -76,7 +71,7 @@ export async function GET(
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

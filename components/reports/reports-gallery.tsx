@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { ReportCard } from "@/components/reports/report-card"
+import { ReportCard } from "@/components/reports/report-card";
 
 interface ReportsGalleryProps {
-  podId: string
+  podId: string;
 }
 
 // Mock reports data
@@ -72,14 +72,14 @@ const mockReports = [
     },
     generatedAt: "2024-12-31T23:59:00Z",
   },
-]
+];
 
-export function ReportsGallery({ podId }: ReportsGalleryProps) {
+export function ReportsGallery() {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {mockReports.map((report) => (
         <ReportCard key={report.id} report={report} />
       ))}
     </div>
-  )
+  );
 }

@@ -1,28 +1,140 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
+import { useSocket } from "@/hooks/use-socket";
 
-// Mock data for tentacle progress
-const tentacleData = [
-  { name: "Energy", progress: 75, color: "#22c55e", icon: "⚡" },
-  { name: "Waste", progress: 60, color: "#16a34a", icon: "🗑️" },
-  { name: "Transport", progress: 45, color: "#15803d", icon: "🚗" },
-  { name: "Water", progress: 80, color: "#166534", icon: "💧" },
-  { name: "Food", progress: 55, color: "#14532d", icon: "🍃" },
-  { name: "Custom", progress: 30, color: "#052e16", icon: "📊" },
-]
+interface TentacleData {
+  name: string;
+  progress: number;
+  color: string;
+  icon: string;
+}
 
-export function OctopusVisualization() {
-  const [animationTrigger, setAnimationTrigger] = useState(0)
+interface OctopusVisualizationProps {
+  podId: string;
+}
+
+export function OctopusVisualization({ podId }: OctopusVisualizationProps) {
+  const [animationTrigger, setAnimationTrigger] = useState(0);
+  const [tentacleData, setTentacleData] = useState<TentacleData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { socket, isConnected, joinPod } = useSocket();
+
+  useEffect(() => {
+    const fetchTentacleData = async () => {
+      try {
+        const response = await fetch(`/api/dashboard/${podId}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Tentacles", data);
+
+          const transformedData = [
+            {
+              name: "Energy",
+              progress: data.tentacles.energy.current || 0,
+              color: "#22c55e",
+              icon: "⚡",
+            },
+            {
+              name: "Waste",
+              progress: data.tentacles.waste.current || 0,
+              color: "#16a34a",
+              icon: "🗑️",
+            },
+            {
+              name: "Transport",
+              progress: data.tentacles.transport.current || 0,
+              color: "#15803d",
+              icon: "🚗",
+            },
+            {
+              name: "Water",
+              progress: data.tentacles.water.current || 0,
+              color: "#166534",
+              icon: "💧",
+            },
+            {
+              name: "Food",
+              progress: data.tentacles.food.current || 0,
+              color: "#14532d",
+              icon: "🍃",
+            },
+            {
+              name: "Custom",
+              progress: data.tentacles.custom.current || 0,
+              color: "#052e16",
+              icon: "📊",
+            },
+          ];
+
+          setTentacleData(transformedData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tentacle data:", error);
+        // Fallback to empty progress if API fails
+        setTentacleData([
+          { name: "Energy", progress: 0, color: "#22c55e", icon: "⚡" },
+          { name: "Waste", progress: 0, color: "#16a34a", icon: "🗑️" },
+          { name: "Transport", progress: 0, color: "#15803d", icon: "🚗" },
+          { name: "Water", progress: 0, color: "#166534", icon: "💧" },
+          { name: "Food", progress: 0, color: "#14532d", icon: "🍃" },
+          { name: "Custom", progress: 0, color: "#052e16", icon: "📊" },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTentacleData();
+  }, [podId]);
+
+  useEffect(() => {
+    if (isConnected && podId) {
+      joinPod(podId);
+    }
+  }, [isConnected, podId, joinPod]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTentacleUpdate = (data) => {
+      if (data.podId === podId) {
+        setTentacleData((prev) =>
+          prev.map((tentacle) =>
+            tentacle.name.toLowerCase() === data.category.toLowerCase()
+              ? {
+                  ...tentacle,
+                  progress: Math.min(100, tentacle.progress + data.points / 10),
+                }
+              : tentacle
+          )
+        );
+      }
+    };
+
+    socket.on("tentacle-updated", handleTentacleUpdate);
+
+    return () => {
+      socket.off("tentacle-updated", handleTentacleUpdate);
+    };
+  }, [socket, podId]);
 
   // Simulate tentacle growth animation
   useEffect(() => {
     const interval = setInterval(() => {
-      setAnimationTrigger((prev) => prev + 1)
-    }, 8000)
+      setAnimationTrigger((prev) => prev + 1);
+    }, 8000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="relative w-96 h-96 mx-auto flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-96 h-96 mx-auto">
@@ -47,11 +159,11 @@ export function OctopusVisualization() {
         {/* Animated tentacles with progress bars */}
         <g className="animate-tentacle">
           {tentacleData.map((tentacle, index) => {
-            const angle = index * 60 - 150 // Spread tentacles around
-            const startX = 200 + Math.cos((angle * Math.PI) / 180) * 50
-            const startY = 200 + Math.sin((angle * Math.PI) / 180) * 30
-            const endX = 200 + Math.cos((angle * Math.PI) / 180) * 150
-            const endY = 280 + Math.sin((angle * Math.PI) / 180) * 80
+            const angle = index * 60 - 150; // Spread tentacles around
+            const startX = 200 + Math.cos((angle * Math.PI) / 180) * 50;
+            const startY = 200 + Math.sin((angle * Math.PI) / 180) * 30;
+            const endX = 200 + Math.cos((angle * Math.PI) / 180) * 150;
+            const endY = 280 + Math.sin((angle * Math.PI) / 180) * 80;
 
             return (
               <g key={tentacle.name}>
@@ -86,7 +198,13 @@ export function OctopusVisualization() {
                 />
 
                 {/* Tentacle tip with icon */}
-                <circle cx={endX} cy={endY} r="20" fill={tentacle.color} opacity="0.8" />
+                <circle
+                  cx={endX}
+                  cy={endY}
+                  r="20"
+                  fill={tentacle.color}
+                  opacity="0.8"
+                />
                 <text
                   x={endX}
                   y={endY + 6}
@@ -108,11 +226,18 @@ export function OctopusVisualization() {
                 >
                   {tentacle.name}
                 </text>
-                <text x={endX} y={endY + 50} textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.7">
-                  {tentacle.progress}%
+                <text
+                  x={endX}
+                  y={endY + 50}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="currentColor"
+                  opacity="0.7"
+                >
+                  {Math.round(tentacle.progress)}%
                 </text>
               </g>
-            )
+            );
           })}
         </g>
 
@@ -142,5 +267,5 @@ export function OctopusVisualization() {
         ))}
       </div>
     </div>
-  )
+  );
 }

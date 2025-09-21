@@ -1,93 +1,121 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/jwt";
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const token = request.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token) as any;
-    const { id: challengeId } = params;
-    const body = await request.json();
-
-    const { progress, notes, imageUrl, data } = body;
-
-    // Mock progress update - replace with database operations
-    const progressEntry = {
-      id: Date.now().toString(),
-      challengeId,
-      userId: decoded.userId,
-      progress: Number.parseFloat(progress),
-      notes,
-      imageUrl,
-      data,
-      timestamp: new Date(),
-    };
-
-    console.log("Updating challenge progress:", progressEntry);
-
-    // Calculate points based on progress
-    const pointsEarned = Math.round(progress * 2); // 2 points per percent
-
-    return NextResponse.json({
-      success: true,
-      data: progressEntry,
-      pointsEarned,
-      message: `Great progress! You earned ${pointsEarned} points!`,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+import { prisma as db } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const challengeId = params.id;
+
+    const challenge = await db.challenge.findUnique({
+      where: { id: challengeId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!challenge) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 404 }
+      );
+    }
+
+    const getDifficulty = (points: number) => {
+      if (points > 100) return "Hard";
+      if (points > 50) return "Medium";
+      return "Easy";
+    };
+
+    const transformedChallenge = {
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description,
+      category: challenge.category,
+      difficulty: getDifficulty(challenge.points),
+      points: challenge.points,
+      startDate: challenge.startDate.toISOString(),
+      endDate: challenge.endDate.toISOString(),
+      progress: challenge.points, // Will be calculated based on user participation
+      isCompleted: new Date() > challenge.endDate,
+      createdBy: challenge.participants[0]?.user.name || "Unknown",
+      creatorName: challenge.participants[0]?.user.name || "Unknown",
+      participants: challenge.participants.map((participant) => ({
+        id: participant.user.id,
+        name: participant.user.name || participant.user.email,
+        progress: participant.progress || 0,
+      })),
+      goals: [
+        {
+          id: "1",
+          title: `Reach ${challenge.target} ${challenge.unit}`,
+          target: challenge.target,
+          current: challenge.points,
+          unit: challenge.unit,
+        },
+      ],
+    };
+
+    return NextResponse.json(transformedChallenge);
+  } catch (error) {
+    console.error("Error fetching challenge:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch challenge" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { challengeId: string } }
+) {
+  try {
     const token = request.cookies.get("auth-token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: challengeId } = params;
+    const decoded = await verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
 
-    // Mock progress data - replace with database queries
-    const progressData = {
-      challengeId,
-      overallProgress: 65,
-      dailyProgress: [
-        { date: "2024-01-15", progress: 10, points: 20 },
-        { date: "2024-01-16", progress: 25, points: 50 },
-        { date: "2024-01-17", progress: 40, points: 80 },
-        { date: "2024-01-18", progress: 55, points: 110 },
-        { date: "2024-01-19", progress: 65, points: 130 },
-      ],
-      milestones: [
-        { name: "First Day Complete", achieved: true, points: 25 },
-        { name: "Halfway There", achieved: true, points: 50 },
-        { name: "Almost Done", achieved: false, points: 75 },
-        { name: "Challenge Master", achieved: false, points: 100 },
-      ],
-      leaderboard: [
-        { userId: "1", name: "Alex Chen", progress: 85, points: 170 },
-        { userId: "2", name: "Maria Garcia", progress: 75, points: 150 },
-        { userId: "3", name: "Current User", progress: 65, points: 130 },
-      ],
-    };
+    const { progress } = await request.json();
+    const challengeId = params.challengeId;
 
-    return NextResponse.json(progressData);
+    await db.challengeParticipation.updateMany({
+      where: {
+        userId: decoded.userId,
+        challengeId: challengeId,
+      },
+      data: {
+        progress: progress,
+        completed: progress >= 100,
+        completedAt: progress >= 100 ? new Date() : null,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Progress updated successfully!",
+    });
   } catch (error) {
+    console.error("Progress update error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to update progress" },
       { status: 500 }
     );
   }

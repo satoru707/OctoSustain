@@ -5,11 +5,6 @@ export async function GET(
   { params }: { params: { reportId: string } }
 ) {
   try {
-    const token = request.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { reportId } = params;
 
     // Mock report status - replace with real database queries
@@ -26,7 +21,7 @@ export async function GET(
     };
 
     return NextResponse.json(reportStatus);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

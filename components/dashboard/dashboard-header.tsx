@@ -3,11 +3,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Activity } from "lucide-react";
+import { Users, Activity, Check, Share2 } from "lucide-react";
+import { useRealTimeDashboard } from "@/hooks/use-real-time-dashboard";
 
 interface DashboardHeaderProps {
   podId: string;
+  token?: string;
 }
 
 interface PodData {
@@ -24,10 +27,19 @@ interface PodData {
   onlineCount: number;
 }
 
-export function DashboardHeader({ podId }: DashboardHeaderProps) {
+export function DashboardHeader({ podId, token }: DashboardHeaderProps) {
   const [podData, setPodData] = useState<PodData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [liveCount, setLiveCount] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyInvite = async () => {
+    const inviteLink = `${window.location.origin}/pods/${podId}/invite`;
+    await navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const { onlineMembers } = useRealTimeDashboard(podId, token);
 
   useEffect(() => {
     const fetchPodData = async () => {
@@ -36,7 +48,6 @@ export function DashboardHeader({ podId }: DashboardHeaderProps) {
         if (response.ok) {
           const data = await response.json();
           setPodData(data.pod);
-          setLiveCount(data.pod.onlineCount);
         }
       } catch (error) {
         console.error("Failed to fetch pod data:", error);
@@ -47,20 +58,6 @@ export function DashboardHeader({ podId }: DashboardHeaderProps) {
 
     fetchPodData();
   }, [podId]);
-
-  // Simulate real-time member count updates
-  useEffect(() => {
-    if (!podData) return;
-
-    const interval = setInterval(() => {
-      setLiveCount((prev) => {
-        const change = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-        return Math.max(1, Math.min(podData.memberCount, prev + change));
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [podData]);
 
   if (loading) {
     return (
@@ -100,21 +97,25 @@ export function DashboardHeader({ podId }: DashboardHeaderProps) {
               </p>
             </div>
 
-            {/* Live member indicator */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
-                </div>
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                  {liveCount} members active now
-                </span>
-              </div>
+              {/* <OnlineMembersIndicator podId={podId} /> */}
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="w-4 h-4" />
                 <span>{podData.memberCount} total members</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    navigator.onLine
+                      ? "bg-green-500 animate-pulse"
+                      : "bg-red-500"
+                  }`}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {navigator.onLine ? "Live" : "Offline"}
+                </span>
               </div>
             </div>
           </div>
@@ -127,18 +128,15 @@ export function DashboardHeader({ podId }: DashboardHeaderProps) {
             </div>
 
             <div className="flex gap-2">
-              {podData.members.slice(0, 3).map((member) => (
+              {onlineMembers.slice(0, 3).map((member) => (
                 <div
-                  key={member.id}
+                  key={member.userId}
                   className="flex flex-col items-center gap-1"
                 >
                   <Avatar className="w-10 h-10 border-2 border-green-500/50">
-                    <AvatarImage
-                      src={member.avatar || "/placeholder.svg"}
-                      alt={member.name}
-                    />
+                    <AvatarImage src="/placeholder.svg" alt={member.username} />
                     <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                      {member.name
+                      {member.username
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
@@ -149,8 +147,50 @@ export function DashboardHeader({ podId }: DashboardHeaderProps) {
                   </Badge>
                 </div>
               ))}
+
+              {/* Show static members if no real-time data yet */}
+              {onlineMembers.length === 0 &&
+                podData.members.slice(0, 3).map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <Avatar className="w-10 h-10 border-2 border-green-500/50">
+                      <AvatarImage
+                        src={member.avatar || "/placeholder.svg"}
+                        alt={member.name}
+                      />
+                      <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                        {member.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Badge variant="secondary" className="text-xs px-1 py-0">
+                      {member.isOnline ? "online" : "offline"}
+                    </Badge>
+                  </div>
+                ))}
             </div>
           </div>
+          <Button
+            onClick={handleCopyInvite}
+            variant="outline"
+            className="border-2 border-primary text-primary hover:bg-primary hover:text-white bg-transparent"
+          >
+            {copied ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Share2 className="mr-2 h-4 w-4" />
+                Invite Members
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>

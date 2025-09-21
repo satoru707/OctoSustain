@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, ArrowRight } from "lucide-react";
+import { Users } from "lucide-react";
 import Link from "next/link";
 
 interface Pod {
@@ -33,6 +33,7 @@ interface PodCardProps {
 }
 
 export function PodCard({ pod }: PodCardProps) {
+  console.log(pod);
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/30">
       <CardHeader className="pb-3">
@@ -42,14 +43,13 @@ export function PodCard({ pod }: PodCardProps) {
               <CardTitle className="text-lg font-bold text-balance">
                 {pod.name}
               </CardTitle>
-              {pod.isLive && (
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                    Live
-                  </span>
-                </div>
-              )}
+
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                  Live
+                </span>
+              </div>
             </div>
             <Badge variant="secondary" className="text-xs">
               {pod.category}
@@ -72,7 +72,7 @@ export function PodCard({ pod }: PodCardProps) {
               >
                 <AvatarImage
                   src={"/confident-latina-woman.png"}
-                  alt={member.user.avatar}
+                  alt={"sorting"}
                 />
                 <AvatarFallback className="text-xs bg-primary/10 text-primary">
                   {member?.user.name
@@ -99,7 +99,6 @@ export function PodCard({ pod }: PodCardProps) {
         <Link href={`/dashboard/${pod.id}`} className="block">
           <Button className="w-full bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white font-semibold transition-all duration-300 group-hover:scale-[1.02]">
             Enter Dashboard
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </Link>
       </CardContent>

@@ -1,60 +1,71 @@
 import { type NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { reportId: string } }
 ) {
   try {
-    const token = request.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     const { reportId } = params;
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") || "pdf";
 
-    // Mock report download - replace with real file generation/retrieval
-    console.log(
-      `Downloading report ${reportId} in ${format} format for user ${decoded.userId}`
-    );
+    const report = await prisma.report.findUnique({
+      where: { id: reportId },
+      include: {
+        user: { select: { name: true } },
+        pod: { select: { name: true } },
+      },
+    });
+
+    if (!report) {
+      return NextResponse.json({ error: "Report not found" }, { status: 404 });
+    }
+
+    const reportData = report.data;
 
     if (format === "pdf") {
-      // Mock PDF generation - replace with real PDF generation (Puppeteer, jsPDF, etc.)
-      const pdfContent = generateMockPDF(reportId);
+      const pdfContent = generatePDF(report, reportData);
+      const pdfStream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(pdfContent);
+          controller.close();
+        },
+      });
 
-      return new NextResponse(pdfContent, {
+      return new NextResponse(pdfStream, {
         headers: {
           "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="report-${reportId}.pdf"`,
+          "Content-Disposition": `attachment; filename="${
+            report.title || "report"
+          }-${reportId}.pdf"`,
         },
       });
     } else if (format === "csv") {
-      // Mock CSV generation
-      const csvContent = generateMockCSV(reportId);
-
+      const csvContent = generateCSV(report, reportData);
       return new NextResponse(csvContent, {
         headers: {
           "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="report-${reportId}.csv"`,
+          "Content-Disposition": `attachment; filename="${
+            report.title || "report"
+          }-${reportId}.csv"`,
         },
       });
     } else if (format === "json") {
-      // Mock JSON export
-      const jsonContent = generateMockJSON(reportId);
-
+      const jsonContent = generateJSON(report, reportData);
       return new NextResponse(JSON.stringify(jsonContent, null, 2), {
         headers: {
           "Content-Type": "application/json",
-          "Content-Disposition": `attachment; filename="report-${reportId}.json"`,
+          "Content-Disposition": `attachment; filename="${
+            report.title || "report"
+          }-${reportId}.json"`,
         },
       });
     }
 
     return NextResponse.json({ error: "Unsupported format" }, { status: 400 });
   } catch (error) {
+    console.error("Download error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -62,8 +73,8 @@ export async function GET(
   }
 }
 
-function generateMockPDF(reportId: string): Buffer {
-  // Mock PDF content - replace with real PDF generation
+function generatePDF(report, reportData) {
+  const summary = reportData?.summary || {};
   const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -86,68 +97,111 @@ endobj
 /Parent 2 0 R
 /MediaBox [0 0 612 792]
 /Contents 4 0 R
+/Resources <<
+/Font <<
+/F1 5 0 R
+>>
+>>
 >>
 endobj
 
 4 0 obj
 <<
-/Length 44
+/Length 400
 >>
 stream
 BT
-/F1 12 Tf
+/F1 16 Tf
 72 720 Td
-(OctoSustain Report ${reportId}) Tj
+(${report.title || "Environmental Impact Report"}) Tj
+0 -30 Td
+/F1 12 Tf
+(Report ID: ${report.id}) Tj
+0 -20 Td
+(Pod: ${report.pod?.name || "N/A"}) Tj
+0 -20 Td
+(Generated: ${new Date(report.createdAt).toLocaleDateString()}) Tj
+0 -20 Td
+(Period: ${report.period || "N/A"}) Tj
+0 -30 Td
+(Total CO2 Saved: ${summary.totalCO2Saved || 0} kg) Tj
+0 -20 Td
+(Total Points: ${summary.totalPoints || 0}) Tj
+0 -20 Td
+(Participants: ${summary.participantCount || 0}) Tj
 ET
 endstream
 endobj
 
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+
 xref
-0 5
+0 6
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
-0000000206 00000 n 
+0000000273 00000 n 
+0000000724 00000 n 
 trailer
 <<
-/Size 5
+/Size 6
 /Root 1 0 R
 >>
 startxref
-300
+793
 %%EOF`;
 
   return Buffer.from(pdfContent);
 }
 
-function generateMockCSV(reportId: string): string {
-  return `Report ID,${reportId}
-Category,CO2 Saved (kg),Points Earned,Progress (%)
-Energy,67.2,890,85
-Waste,43.1,650,72
-Transport,28.4,420,68
-Water,12.3,180,45
-Food,5.7,200,38
-Total,156.7,2340,62`;
+function generateCSV(report, reportData): string {
+  const summary = reportData?.summary || {};
+  const categories = reportData?.categories || {};
+
+  let csv = `Report ID,${report.id}\n`;
+  csv += `Title,${report.title || "N/A"}\n`;
+  csv += `Pod,${report.pod?.name || "N/A"}\n`;
+  csv += `Generated Date,${new Date(report.createdAt).toISOString()}\n`;
+  csv += `Period,${report.period || "N/A"}\n`;
+  csv += `Type,${report.type || "N/A"}\n\n`;
+
+  if (summary.totalCO2Saved || summary.totalPoints) {
+    csv += `Summary\n`;
+    csv += `Total CO2 Saved (kg),${summary.totalCO2Saved || 0}\n`;
+    csv += `Total Points,${summary.totalPoints || 0}\n`;
+    csv += `Participants,${summary.participantCount || 0}\n`;
+    csv += `Active Days,${summary.activeDays || 0}\n\n`;
+  }
+
+  if (Object.keys(categories).length > 0) {
+    csv += `Category,CO2 Saved (kg),Points Earned,Progress (%)\n`;
+    Object.entries(categories).forEach(([category, data]) => {
+      csv += `${category},${data.co2Saved || 0},${data.points || 0},${
+        data.progress || 0
+      }\n`;
+    });
+  }
+
+  return csv;
 }
 
-function generateMockJSON(reportId: string): object {
+function generateJSON(report, reportData): object {
   return {
-    reportId,
-    title: "Environmental Impact Report",
-    generatedAt: new Date().toISOString(),
-    summary: {
-      totalCO2Saved: 156.7,
-      totalPoints: 2340,
-      overallProgress: 62,
-    },
-    categories: {
-      energy: { co2Saved: 67.2, points: 890, progress: 85 },
-      waste: { co2Saved: 43.1, points: 650, progress: 72 },
-      transport: { co2Saved: 28.4, points: 420, progress: 68 },
-      water: { co2Saved: 12.3, points: 180, progress: 45 },
-      food: { co2Saved: 5.7, points: 200, progress: 38 },
-    },
+    reportId: report.id,
+    title: report.title,
+    type: report.type,
+    period: report.period,
+    podName: report.pod?.name,
+    generatedAt: report.createdAt,
+    generatedBy: report.user?.name,
+    status: report.status,
+    data: reportData || {},
   };
 }

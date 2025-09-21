@@ -11,17 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Trophy,
-  Clock,
-  Lightbulb,
-  FileText,
-  Crown,
-  Medal,
-  Award,
-} from "lucide-react";
+import { Trophy, Lightbulb, FileText, Crown, Medal, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { GenerateReportModal } from "@/components/reports/generate-report-modal";
 
 interface GamificationSidebarProps {
   podId: string;
@@ -42,19 +34,22 @@ interface GamificationData {
     progress: number;
     points: number;
   }>;
-  predictiveTip: {
-    category: string;
-    message: string;
-    potentialSaving: string;
-  };
+}
+
+interface SmartTip {
+  category: string;
+  message: string;
+  potentialSaving: string;
+  learnMoreUrl?: string;
 }
 
 export function GamificationSidebar({ podId }: GamificationSidebarProps) {
-  const [currentTime, setCurrentTime] = useState(Date.now());
   const [gamificationData, setGamificationData] =
     useState<GamificationData | null>(null);
+  const [smartTip, setSmartTip] = useState<SmartTip | null>(null);
   const [loading, setLoading] = useState(true);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -72,65 +67,70 @@ export function GamificationSidebar({ podId }: GamificationSidebarProps) {
       }
     };
 
+    const fetchSmartTip = async () => {
+      try {
+        const response = await fetch(`/api/dashboard/${podId}/tips`);
+        if (response.ok) {
+          const data = await response.json();
+          setSmartTip(data.tip);
+        }
+      } catch (error) {
+        console.error("Failed to fetch smart tip:", error);
+      }
+    };
+
     fetchGamificationData();
+    fetchSmartTip();
   }, [podId]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
+  // const handleGenerateReport = async () => {
+  //   setGeneratingReport(true);
+  //   try {
+  //     const response = await fetch(`/api/dashboard/${podId}reports/generate`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         podId,
+  //         type: "weekly",
+  //         period: "weekly",
+  //         startDate: new Date(
+  //           Date.now() - 7 * 24 * 60 * 60 * 1000
+  //         ).toISOString(),
+  //         endDate: new Date().toISOString(),
+  //         includeCharts: true,
+  //         includeDetails: true,
+  //         format: "pdf",
+  //       }),
+  //     });
 
-    return () => clearInterval(timer);
-  }, []);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       toast.success("Report generated successfully!");
+  //       router.push(`/reports/${podId}`);
+  //     } else {
+  //       toast.error("Failed to generate report");
+  //     }
+  //   } catch (error) {
+  //     console.error("Report generation error:", error);
+  //     toast.error("Failed to generate report");
+  //   } finally {
+  //     setGeneratingReport(false);
+  //   }
+  // };
 
-  const handleGenerateReport = async () => {
-    setGeneratingReport(true);
-    try {
-      const response = await fetch("/api/reports/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          podId,
-          type: "weekly",
-          period: "weekly",
-          startDate: new Date(
-            Date.now() - 7 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          endDate: new Date().toISOString(),
-          includeCharts: true,
-          includeDetails: true,
-          format: "pdf",
-        }),
-      });
+  // const formatTimeLeft = (timeLeft: number) => {
+  //   const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  //   const hours = Math.floor(
+  //     (timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  //   );
+  //   const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success("Report generated successfully!");
-        router.push(`/reports/${podId}`);
-      } else {
-        toast.error("Failed to generate report");
-      }
-    } catch (error) {
-      console.error("Report generation error:", error);
-      toast.error("Failed to generate report");
-    } finally {
-      setGeneratingReport(false);
-    }
-  };
-
-  const formatTimeLeft = (timeLeft: number) => {
-    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(
-      (timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-    );
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
-  };
+  //   if (days > 0) return `${days}d ${hours}h`;
+  //   if (hours > 0) return `${hours}h ${minutes}m`;
+  //   return `${minutes}m`;
+  // };
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -259,59 +259,6 @@ export function GamificationSidebar({ podId }: GamificationSidebarProps) {
         </CardContent>
       </Card>
 
-      {/* Active Challenges */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            Active Challenges
-          </CardTitle>
-          <CardDescription>Join before time runs out!</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {gamificationData.activeChallenges.length > 0 ? (
-            gamificationData.activeChallenges.map((challenge) => {
-              const timeLeft = challenge.timeLeft;
-              const isUrgent = timeLeft < 24 * 60 * 60 * 1000; // Less than 24 hours
-
-              return (
-                <div
-                  key={challenge.id}
-                  className="p-3 border rounded-lg space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">{challenge.name}</h4>
-                    <Badge
-                      variant={isUrgent ? "destructive" : "secondary"}
-                      className="text-xs"
-                    >
-                      {formatTimeLeft(timeLeft)}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Progress</span>
-                      <span>{challenge.progress}%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${challenge.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No active challenges
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Predictive Tip */}
       <Card className="border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20">
         <CardHeader>
@@ -322,15 +269,21 @@ export function GamificationSidebar({ podId }: GamificationSidebarProps) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
-            {gamificationData.predictiveTip.message}
+            {smartTip?.message || "Loading personalized tip..."}
           </p>
           <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">
-            Potential saving: {gamificationData.predictiveTip.potentialSaving}
+            Potential saving: {smartTip?.potentialSaving || "Calculating..."}
           </div>
           <Button
             size="sm"
             variant="outline"
             className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-100 bg-transparent"
+            onClick={() => {
+              if (smartTip?.learnMoreUrl) {
+                window.open(smartTip.learnMoreUrl, "_blank");
+              }
+            }}
+            disabled={!smartTip?.learnMoreUrl}
           >
             Learn More
           </Button>
@@ -342,14 +295,18 @@ export function GamificationSidebar({ podId }: GamificationSidebarProps) {
         <CardContent className="p-4">
           <Button
             className="w-full bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 text-white"
-            onClick={handleGenerateReport}
-            disabled={generatingReport}
+            onClick={() => setIsReportModalOpen(true)}
           >
             <FileText className="mr-2 h-4 w-4" />
             {generatingReport ? "Generating..." : "Generate Report"}
           </Button>
         </CardContent>
       </Card>
+      <GenerateReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        podId={podId}
+      />
     </div>
   );
 }

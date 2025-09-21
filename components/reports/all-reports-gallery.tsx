@@ -34,6 +34,8 @@ export function AllReportsGallery() {
         const response = await fetch("/api/reports");
         if (response.ok) {
           const data = await response.json();
+          console.log("reports", data);
+
           setReports(data.reports);
         } else {
           toast.error("Failed to fetch reports");

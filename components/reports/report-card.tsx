@@ -111,7 +111,6 @@ export function ReportCard({ report, showPodName = false }: ReportCardProps) {
     try {
       const response = await fetch(`/api/reports/${report.id}`);
       if (response.ok) {
-        const data = await response.json();
         // Open preview in new window/tab
         window.open(`/reports/preview/${report.id}`, "_blank");
         toast.success("Opening report preview");

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/jwt";
-import { prisma } from "@/lib/prisma";
+import { prisma as db } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const filter = searchParams.get("filter") || "all";
     const category = searchParams.get("category");
 
-    const challenges = await prisma.challenge.findMany({
+    const challenges = await db.challenge.findMany({
       where: {
         ...(category && category !== "all" ? { category } : {}),
         isActive: true,
@@ -56,9 +56,12 @@ export async function GET(request: NextRequest) {
         startDate: challenge.startDate,
         endDate: challenge.endDate,
         participants: challenge._count.participants,
-        maxParticipants: 50, // Could be added to schema if needed
+        maxParticipants: 50,
         progress: userParticipation?.progress || 0,
         isJoined,
+        userJoined: isJoined,
+        userCompleted: userParticipation?.completed || false,
+        podProgress: userParticipation?.progress || 0,
         requirements: [
           "Log daily progress",
           "Upload verification photos",
@@ -69,6 +72,7 @@ export async function GET(request: NextRequest) {
         isActive: now >= challenge.startDate && now <= challenge.endDate,
         isUpcoming: now < challenge.startDate,
         isCompleted: now > challenge.endDate,
+        icon: "🌱",
       };
     });
 
@@ -127,9 +131,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const newChallenge = await prisma.challenge.create({
+    const newChallenge = await db.challenge.create({
       data: {
-        title: body.name || body.title,
+        title: body.title,
         description: body.description,
         category: body.category,
         target: body.target || 100,
@@ -137,6 +141,17 @@ export async function POST(request: NextRequest) {
         points: body.points || 50,
         startDate: new Date(body.startDate || Date.now()),
         endDate: new Date(body.endDate || Date.now() + 7 * 24 * 60 * 60 * 1000),
+        isActive: true,
+      },
+    });
+
+    await db.challengeParticipation.create({
+      data: {
+        userId: decoded.userId,
+        challengeId: newChallenge.id,
+        progress: 0,
+        completed: false,
+        joinedAt: new Date(),
       },
     });
 
